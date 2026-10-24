@@ -1,120 +1,162 @@
-
 <section class="dashboard">
 
-  <div class="dashboard-heading">
-    <div>
-      <h2>Dashboard Overview</h2>
-      <p>Here's what's happening in your store today.</p>
+    <div class="dashboard-heading">
+        <div>
+            <h2>Dashboard Overview</h2>
+            <p>Here's what's happening in your store today.</p>
+        </div>
     </div>
-  </div>
 
-  <div class="summary-grid">
-    @for (card of summaryCards; track card.title) {
-      <div class="summary-card">
+    <div class="summary-grid">
+        @for (card of summaryCards; track card.title) {
+        <div class="summary-card">
 
-        <div class="card-top">
-          <div class="card-icon" [ngClass]="card.color">
-            <i [class]="card.icon"></i>
-          </div>
+            <div class="card-top">
+                <div class="card-icon" [ngClass]="card.color">
+                    <i [class]="card.icon"></i>
+                </div>
+            </div>
+
+            <h3>{{ card.title }}</h3>
+
+            <div class="card-value">{{ card.value }}</div>
+
+            <div class="card-footer">
+                <span [ngClass]="card.color">{{ card.change }}</span>
+                <small>{{ card.description }}</small>
+            </div>
+
         </div>
-
-        <h3>{{ card.title }}</h3>
-
-        <div class="card-value">{{ card.value }}</div>
-
-        <div class="card-footer">
-          <span [ngClass]="card.color">{{ card.change }}</span>
-          <small>{{ card.description }}</small>
-        </div>
-
-      </div>
-    }
-  </div>
+        }
+    </div>
 
 </section>
 
 <section class="chart-section">
-  <div class="chart-card">
-    <div class="chart-header">
-      <div>
-        <h3>Sales Overview</h3>
-        <p>Monthly sales performance</p>
-      </div>
+    <div class="chart-card">
+        <div class="chart-header">
+            <div>
+                <h3>Sales Overview</h3>
+                <p>Monthly sales performance</p>
+            </div>
 
-      <span class="chart-period">This Year</span>
-    </div>
+            <span class="chart-period">This Year</span>
+        </div>
 
-    <div class="chart-container">
-      <canvas
-        baseChart
-        [type]="'line'"
-        [data]="salesChartData"
-        [options]="salesChartOptions">
-      </canvas>
+        <div class="chart-container">
+            <canvas baseChart [type]="'line'" [data]="salesChartData" [options]="salesChartOptions">
+            </canvas>
+        </div>
     </div>
-  </div>
 </section>
 
 
 <!-- Recent Sales Section -->
 <section class="recent-sales-section">
-  <div class="recent-sales-card">
+    <div class="recent-sales-card">
 
-    <div class="section-header">
-      <div>
-        <h3>Recent Sales</h3>
-        <p>Latest transactions from your store</p>
-      </div>
+        <div class="section-header">
+            <div>
+                <h3>Recent Sales</h3>
+                <p>Latest transactions from your store</p>
+            </div>
 
-      <button class="view-all-button" type="button">
-        View All
-        <i class="pi pi-arrow-right"></i>
-      </button>
+            <button class="view-all-button" type="button">
+                View All
+                <i class="pi pi-arrow-right"></i>
+            </button>
+        </div>
+
+        <p-table [value]="recentSales" [responsiveLayout]="'scroll'" styleClass="recent-sales-table">
+            <ng-template #header>
+                <tr>
+                    <th>Invoice</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </ng-template>
+
+            <ng-template #body let-sale>
+                <tr>
+                    <td class="invoice-number">{{ sale.invoice }}</td>
+
+                    <td>{{ sale.customer }}</td>
+
+                    <td>{{ sale.date | date: 'dd MMM yyyy' }}</td>
+
+                    <td class="sale-amount">
+                        {{ sale.amount | currency: 'INR' : 'symbol' : '1.0-0' }}
+                    </td>
+
+                    <td>
+                        <span class="status-badge" [ngClass]="sale.status.toLowerCase()">
+                            {{ sale.status }}
+                        </span>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="5" class="empty-message">
+                        No recent sales found.
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+
     </div>
+</section>
 
-    <p-table
-      [value]="recentSales"
-      [responsiveLayout]="'scroll'"
-      styleClass="recent-sales-table"
-    >
-      <ng-template #header>
-        <tr>
-          <th>Invoice</th>
-          <th>Customer</th>
-          <th>Date</th>
-          <th>Amount</th>
-          <th>Status</th>
-        </tr>
-      </ng-template>
+<!-- Low Stock Products Section -->
+<section class="low-stock-section">
+    <div class="low-stock-card">
+        <div class="section-header">
+            <div>
+                <h3>Low Stock Products</h3>
+                <p>Products that need restocking</p>
+            </div>
 
-      <ng-template #body let-sale>
-        <tr>
-          <td class="invoice-number">{{ sale.invoice }}</td>
+            <button class="view-all-button" type="button">
+                View All
+                <i class="pi pi-arrow-right"></i>
+            </button>
+        </div>
 
-          <td>{{ sale.customer }}</td>
+        <p-table [value]="lowStockProducts" [responsiveLayout]="'scroll'" styleClass="low-stock-table">
+            <ng-template #header>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Available Stock</th>
+                    <th>Minimum Stock</th>
+                    <th>Status</th>
+                </tr>
+            </ng-template>
 
-          <td>{{ sale.date | date: 'dd MMM yyyy' }}</td>
+            <ng-template #body let-product>
+                <tr>
+                    <td class="product-name">{{ product.name }}</td>
+                    <td>{{ product.sku }}</td>
+                    <td>{{ product.category }}</td>
+                    <td class="stock-value">{{ product.availableStock }}</td>
+                    <td>{{ product.minimumStock }}</td>
+                    <td>
+                        <span class="stock-status">Low Stock</span>
+                    </td>
+                </tr>
+            </ng-template>
 
-          <td class="sale-amount">
-            {{ sale.amount | currency: 'INR' : 'symbol' : '1.0-0' }}
-          </td>
-
-          <td>
-            <span class="status-badge" [ngClass]="sale.status.toLowerCase()">
-              {{ sale.status }}
-            </span>
-          </td>
-        </tr>
-      </ng-template>
-
-      <ng-template #emptymessage>
-        <tr>
-          <td colspan="5" class="empty-message">
-            No recent sales found.
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-
-  </div>
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="6" class="empty-message">
+                        No low-stock products found.
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
 </section>

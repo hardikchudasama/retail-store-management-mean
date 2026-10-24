@@ -182,124 +182,197 @@
     }
 }
 
-.recent-sales-section {
+.recent-sales-section,
+.low-stock-section {
     margin-top: 24px;
 }
 
-.recent-sales-card {
+.recent-sales-card,
+.low-stock-card {
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 22px;
     min-width: 0;
+}
+
+// Shared section heading
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+        color: #172554;
+    }
+
+    p {
+        margin: 0;
+        font-size: 12px;
+        color: #64748b;
+    }
+}
+
+// Shared View All button
+.view-all-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 0;
+    border: none;
+    background: transparent;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+
+    i {
+        font-size: 12px;
+        transition: transform 0.2s ease;
+    }
+
+    &:hover {
+        color: #1d4ed8;
+
+        i {
+            transform: translateX(3px);
+        }
+    }
+}
+
+// Recent Sales table content
+.invoice-number {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.sale-amount {
+    color: #172554;
+    font-weight: 600;
+}
+
+// Recent Sales status badges
+.status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &.paid {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    &.pending {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    &.failed {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+}
+
+// Low Stock table content
+.product-name {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.stock-value {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.stock-status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+// Shared PrimeNG table styling
+:host ::ng-deep {
+    .recent-sales-table,
+    .low-stock-table {
+        .p-datatable-table {
+            width: 100%;
+        }
+
+        .p-datatable-thead > tr > th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 14px 12px;
+            white-space: nowrap;
+            border-color: #e5e7eb;
+        }
+
+        .p-datatable-tbody > tr > td {
+            padding: 15px 12px;
+            font-size: 12px;
+            color: #475569;
+            white-space: nowrap;
+            border-color: #e5e7eb;
+        }
+
+        .p-datatable-tbody > tr:hover {
+            background: #f8fafc;
+        }
+    }
+
+    .recent-sales-table .p-datatable-table {
+        min-width: 600px;
+    }
+
+    .low-stock-table .p-datatable-table {
+        min-width: 750px;
+    }
+}
+
+// Empty table message
+.empty-message {
+    text-align: center;
+    padding: 24px !important;
+    color: #64748b;
+}
+
+// Mobile responsive styling
+@media (max-width: 480px) {
+    .recent-sales-card,
+    .low-stock-card {
+        padding: 14px;
+    }
 
     .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 20px;
+        gap: 8px;
 
         h3 {
-            margin: 0 0 6px;
-            font-size: 16px;
-            color: #172554;
+            font-size: 15px;
         }
 
         p {
-            margin: 0;
-            font-size: 12px;
-            color: #64748b;
+            font-size: 11px;
         }
     }
 
     .view-all-button {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border: none;
-        background: transparent;
-        color: #2563eb;
         font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    .invoice-number {
-        color: #2563eb;
-        font-weight: 600;
-    }
-
-    .sale-amount {
-        color: #172554;
-        font-weight: 600;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 600;
-
-        &.paid {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        &.pending {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        &.failed {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-    }
-
-    .empty-message {
-        text-align: center;
-        padding: 24px;
-        color: #64748b;
-    }
-}
-
-// PrimeNG table styling
-:host ::ng-deep .recent-sales-table {
-    .p-datatable-thead>tr>th {
-        background: #f8fafc;
-        color: #64748b;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 14px 12px;
-        white-space: nowrap;
-    }
-
-    .p-datatable-tbody>tr>td {
-        padding: 15px 12px;
-        font-size: 12px;
-        color: #475569;
-        white-space: nowrap;
-    }
-
-    .p-datatable-tbody>tr:hover {
-        background: #f8fafc;
-    }
-}
-
-@media (max-width: 480px) {
-    .recent-sales-card {
-        padding: 14px;
-
-        .section-header {
-            h3 {
-                font-size: 15px;
-            }
-
-            p {
-                font-size: 11px;
-            }
-        }
+        gap: 5px;
     }
 }

@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration } from 'chart.js';
 import { TableModule } from 'primeng/table';
-import { Sale } from '../../models/sale.model';
+import { Sale, LowStockProduct } from '../../models';
 import { CommonModule } from '@angular/common';
 import 'chart.js/auto';
 
@@ -49,6 +49,49 @@ export class Dashboard {
       description: 'Products below minimum stock',
     },
   ];
+
+  lowStockProducts: LowStockProduct[] = [
+  {
+    id: '1',
+    name: 'Wireless Mouse',
+    sku: 'WM-001',
+    category: 'Electronics',
+    availableStock: 5,
+    minimumStock: 10,
+  },
+  {
+    id: '2',
+    name: 'Office Chair',
+    sku: 'OC-002',
+    category: 'Furniture',
+    availableStock: 2,
+    minimumStock: 5,
+  },
+  {
+    id: '3',
+    name: 'USB Keyboard',
+    sku: 'UK-003',
+    category: 'Electronics',
+    availableStock: 8,
+    minimumStock: 15,
+  },
+  {
+    id: '4',
+    name: 'Notebook',
+    sku: 'NB-004',
+    category: 'Stationery',
+    availableStock: 3,
+    minimumStock: 10,
+  },
+  {
+    id: '5',
+    name: 'Water Bottle',
+    sku: 'WB-005',
+    category: 'Accessories',
+    availableStock: 4,
+    minimumStock: 8,
+  },
+];
 
   salesChartData: ChartConfiguration<'line'>['data'] = {
     labels: [
