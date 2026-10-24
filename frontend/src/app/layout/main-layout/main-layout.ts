@@ -10,5 +10,13 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './main-layout.scss',
 })
 export class MainLayout {
+  isSidebarOpen = false;
 
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }
 }

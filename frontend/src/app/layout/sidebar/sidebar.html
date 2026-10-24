@@ -1,4 +1,4 @@
-<aside class="sidebar">
+<aside class="sidebar" [class.open]="isOpen">
   <div class="brand">
     <div class="brand-icon">
       <i class="pi pi-shop"></i>
@@ -12,44 +12,52 @@
   <div class="menu-label">MAIN MENU</div>
 
   <nav class="menu">
-    <a routerLink="/dashboard" routerLinkActive="active">
+    <a routerLink="/dashboard" routerLinkActive="active"
+       (click)="closeSidebar.emit()">
       <i class="pi pi-home"></i>
       <span>Dashboard</span>
     </a>
 
-    <a routerLink="/products" routerLinkActive="active">
+    <a routerLink="/products" routerLinkActive="active"
+       (click)="closeSidebar.emit()">
       <i class="pi pi-box"></i>
       <span>Products</span>
     </a>
 
-    <a routerLink="/inventory" routerLinkActive="active">
+    <a routerLink="/inventory" routerLinkActive="active"
+       (click)="closeSidebar.emit()">
       <i class="pi pi-warehouse"></i>
       <span>Inventory</span>
     </a>
 
-    <a routerLink="/purchases" routerLinkActive="active">
+    <a routerLink="/purchases" routerLinkActive="active"
+       (click)="closeSidebar.emit()">
       <i class="pi pi-shopping-bag"></i>
       <span>Purchases</span>
     </a>
 
-    <a routerLink="/sales" routerLinkActive="active">
+    <a routerLink="/sales" routerLinkActive="active"
+       (click)="closeSidebar.emit()">
       <i class="pi pi-shopping-cart"></i>
       <span>Sales & Billing</span>
     </a>
 
     <div class="menu-label secondary-label">MANAGEMENT</div>
 
-    <a routerLink="/customers" routerLinkActive="active">
+    <a routerLink="/customers" routerLinkActive="active"
+       (click)="closeSidebar.emit()">
       <i class="pi pi-users"></i>
       <span>Customers</span>
     </a>
 
-    <a routerLink="/suppliers" routerLinkActive="active">
+    <a routerLink="/suppliers" routerLinkActive="active"
+       (click)="closeSidebar.emit()">
       <i class="pi pi-truck"></i>
       <span>Suppliers</span>
     </a>
 
-    <a routerLink="/reports" routerLinkActive="active">
+    <a routerLink="/reports" routerLinkActive="active"
+       (click)="closeSidebar.emit()">
       <i class="pi pi-chart-bar"></i>
       <span>Reports</span>
     </a>
