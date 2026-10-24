@@ -1,29 +1,18 @@
 .sidebar {
   width: 250px;
-  height: 100vh;
+  height: 100%;
+  min-height: 100vh;
+
   background: #172554;
   color: #fff;
   padding: 24px 16px;
+
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  align-self: stretch;
+
   transition: transform 0.3s ease;
-
-  @media (max-width: 768px) {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 260px;
-    height: 100dvh;
-    z-index: 1001;
-    overflow-y: auto;
-    transform: translateX(-100%);
-
-    &.open {
-      transform: translateX(0);
-    }
-  }
 
   .brand {
     display: flex;
@@ -100,5 +89,30 @@
     gap: 12px;
     color: #cbd5e1;
     cursor: pointer;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 260px;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100dvh;
+
+    box-sizing: border-box;
+    z-index: 1001;
+    overflow-y: auto;
+
+    transform: translateX(-100%);
+
+    &.open {
+      transform: translateX(0);
+    }
   }
 }

@@ -1,0 +1,305 @@
+.dashboard {
+    width: 100%;
+
+    .dashboard-heading {
+        margin-bottom: 24px;
+
+        h2 {
+            margin: 0 0 6px;
+            font-size: 22px;
+            color: #172554;
+        }
+
+        p {
+            margin: 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .summary-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        min-width: 0;
+
+        .card-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 19px;
+
+            &.blue {
+                background: #dbeafe;
+                color: #2563eb;
+            }
+
+            &.green {
+                background: #dcfce7;
+                color: #16a34a;
+            }
+
+            &.purple {
+                background: #f3e8ff;
+                color: #9333ea;
+            }
+
+            &.orange {
+                background: #ffedd5;
+                color: #ea580c;
+            }
+        }
+
+        h3 {
+            margin: 18px 0 8px;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .card-value {
+            font-size: 25px;
+            font-weight: 700;
+            color: #172554;
+        }
+
+        .card-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 12px;
+
+            span {
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            small {
+                font-size: 11px;
+                color: #94a3b8;
+            }
+
+            .blue {
+                color: #2563eb;
+            }
+
+            .green {
+                color: #16a34a;
+            }
+
+            .purple {
+                color: #9333ea;
+            }
+
+            .orange {
+                color: #ea580c;
+            }
+        }
+    }
+}
+
+@media (max-width: 1100px) {
+    .dashboard .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard {
+        .dashboard-heading h2 {
+            font-size: 19px;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+    }
+}
+
+
+.chart-section {
+    margin-top: 24px;
+}
+
+.chart-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 22px;
+
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 24px;
+
+        h3 {
+            margin: 0 0 6px;
+            font-size: 16px;
+            color: #172554;
+        }
+
+        p {
+            margin: 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .chart-period {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+            font-size: 12px;
+            color: #475569;
+        }
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-card {
+        padding: 14px;
+
+        .chart-container {
+            height: 240px;
+        }
+    }
+}
+
+.recent-sales-section {
+    margin-top: 24px;
+}
+
+.recent-sales-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 22px;
+    min-width: 0;
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 20px;
+
+        h3 {
+            margin: 0 0 6px;
+            font-size: 16px;
+            color: #172554;
+        }
+
+        p {
+            margin: 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+    }
+
+    .view-all-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        background: transparent;
+        color: #2563eb;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .invoice-number {
+        color: #2563eb;
+        font-weight: 600;
+    }
+
+    .sale-amount {
+        color: #172554;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+
+        &.paid {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        &.pending {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        &.failed {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+    }
+
+    .empty-message {
+        text-align: center;
+        padding: 24px;
+        color: #64748b;
+    }
+}
+
+// PrimeNG table styling
+:host ::ng-deep .recent-sales-table {
+    .p-datatable-thead>tr>th {
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 14px 12px;
+        white-space: nowrap;
+    }
+
+    .p-datatable-tbody>tr>td {
+        padding: 15px 12px;
+        font-size: 12px;
+        color: #475569;
+        white-space: nowrap;
+    }
+
+    .p-datatable-tbody>tr:hover {
+        background: #f8fafc;
+    }
+}
+
+@media (max-width: 480px) {
+    .recent-sales-card {
+        padding: 14px;
+
+        .section-header {
+            h3 {
+                font-size: 15px;
+            }
+
+            p {
+                font-size: 11px;
+            }
+        }
+    }
+}
