@@ -1,0 +1,90 @@
+<section class="products-page">
+    <div class="page-heading">
+        <div>
+            <h2>Products</h2>
+            <p>Manage your store products and inventory.</p>
+        </div>
+
+        <button class="add-product-button" type="button">
+            <i class="pi pi-plus"></i>
+            Add Product
+        </button>
+    </div>
+
+    <div class="products-card">
+        <div class="products-toolbar">
+            <div class="search-box">
+                <i class="pi pi-search"></i>
+                <input type="text" [(ngModel)]="searchText" placeholder="Search by product name, SKU or category..."
+                    (input)="applyFilters()" />
+            </div>
+            
+            <!-- Category filter -->
+            <p-select [options]="categories" [(ngModel)]="selectedCategory" optionLabel="label" optionValue="value"
+                placeholder="Select Category" styleClass="product-filter" (onChange)="applyFilters()" />
+
+            <!-- Stock filter -->
+            <p-select [options]="stockStatuses" [(ngModel)]="selectedStockStatus" optionLabel="label"
+                optionValue="value" placeholder="Select Stock Status" styleClass="product-filter"
+                (onChange)="applyFilters()" />
+
+            <!-- Reset icon -->
+            <button type="button" class="reset-filter-btn" pTooltip="Reset all filters" tooltipPosition="top"
+                aria-label="Reset all filters" (click)="resetFilters()">
+                <i class="pi pi-filter-slash"></i>
+            </button>
+        </div>
+
+        <p-table #dt [value]="filteredProducts" [globalFilterFields]="['name', 'sku', 'category']"
+            [responsiveLayout]="'scroll'" styleClass="products-table">
+            <ng-template #header>
+                <tr>
+                    <th>Product Name</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Purchase Price</th>
+                    <th>Selling Price</th>
+                    <th>Stock</th>
+                    <th>Minimum Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </ng-template>
+
+            <ng-template #body let-product>
+                <tr>
+                    <td class="product-name">{{ product.name }}</td>
+                    <td>{{ product.sku }}</td>
+                    <td>{{ product.category }}</td>
+                    <td>{{ product.purchasePrice | currency:'INR':'symbol':'1.0-0' }}</td>
+                    <td class="selling-price">
+                        {{ product.sellingPrice | currency:'INR':'symbol':'1.0-0' }}
+                    </td>
+                    <td>{{ product.quantity }}</td>
+                    <td>{{ product.minimumStock }}</td>
+                    <td>
+                        <span class="product-status" [ngClass]="product.status.toLowerCase()">
+                            {{ product.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="action-button" type="button" aria-label="Edit product">
+                            <i class="pi pi-pencil"></i>
+                        </button>
+                        <button class="action-button delete" type="button" aria-label="Delete product">
+                            <i class="pi pi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="8" class="empty-message">
+                        No products found.
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</section>
