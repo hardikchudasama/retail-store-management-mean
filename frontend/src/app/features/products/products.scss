@@ -153,6 +153,38 @@
   }
 }
 
+.view-btn {
+  color: #2563eb;
+}
+
+.product-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  span {
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  strong {
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+}
+
+.description-item {
+  grid-column: 1 / -1;
+}
+
 :host ::ng-deep .products-table {
   .p-datatable-table {
     min-width: 950px;
@@ -188,6 +220,16 @@
 
     h2 {
       font-size: 19px;
+    }
+
+    @media (max-width: 576px) {
+      .product-details {
+        grid-template-columns: 1fr;
+      }
+
+      .description-item {
+        grid-column: auto;
+      }
     }
   }
 
@@ -246,5 +288,100 @@
 
   .product-filter {
     width: 100%;
+  }
+}
+
+.product-form {
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #dbe2ea;
+      border-radius: 7px;
+      outline: none;
+      font-size: 13px;
+      font-family: inherit;
+      box-sizing: border-box;
+
+      &:focus {
+        border-color: #3b82f6;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+    }
+  }
+
+  .form-select {
+    width: 100%;
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .error-message {
+    color: #dc2626;
+    font-size: 11px;
+  }
+}
+
+.cancel-btn,
+.add-product-btn {
+  padding: 9px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  border: 1px solid #dbe2ea;
+  background: #fff;
+  color: #475569;
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.add-product-btn {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    border-color: #1d4ed8;
+    background: #1d4ed8;
+  }
+
+  &:disabled {
+    border-color: #93c5fd;
+    background: #93c5fd;
+    cursor: not-allowed;
+  }
+}
+
+@media (max-width: 600px) {
+  .product-form .form-grid {
+    grid-template-columns: 1fr;
   }
 }

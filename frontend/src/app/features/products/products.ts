@@ -3,16 +3,92 @@ import { Product } from '../../models';
 import { TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
 import { SelectModule } from 'primeng/select';
-import { FormsModule } from '@angular/forms';
+import { DialogModule } from 'primeng/dialog';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
+
+const sellingPriceValidator: ValidatorFn = (
+  control: AbstractControl
+): ValidationErrors | null => {
+  const purchasePrice = control.get('purchasePrice')?.value;
+  const sellingPrice = control.get('sellingPrice')?.value;
+
+  if (
+    purchasePrice === null ||
+    sellingPrice === null ||
+    purchasePrice === '' ||
+    sellingPrice === ''
+  ) {
+    return null;
+  }
+
+  return Number(sellingPrice) < Number(purchasePrice)
+    ? { sellingPriceBelowPurchase: true }
+    : null;
+};
 
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, TableModule, FormsModule, SelectModule],
+  imports: [
+    CommonModule,
+    TableModule,
+    FormsModule,
+    SelectModule,
+    TooltipModule,
+    DialogModule,
+    ButtonModule,
+    ReactiveFormsModule,
+    ConfirmDialogModule,
+    ToastModule,
+  ],
   templateUrl: './products.html',
   styleUrl: './products.scss',
+  providers: [ConfirmationService, MessageService],
 })
 export class Products {
+  productForm: FormGroup;
+
+  constructor(
+    private fb: FormBuilder,
+    private confirmationService: ConfirmationService,
+    private messageService: MessageService
+  ) {
+    this.productForm = this.fb.group(
+      {
+        name: ['', [Validators.required, Validators.minLength(3)]],
+        sku: ['', Validators.required],
+        category: ['', Validators.required],
+        purchasePrice: [null as number | null, [Validators.required, Validators.min(0.01)]],
+        sellingPrice: [null as number | null, [Validators.required, Validators.min(0.01)]],
+        quantity: [0, [Validators.required, Validators.min(0)]],
+        minimumStock: [5, [Validators.required, Validators.min(0)]],
+        description: [''],
+      },
+      {
+        validators: sellingPriceValidator,
+      }
+    );
+  }
+
   searchText = '';
+  addProductDialog = false;
+  selectedProduct: Product | null = null;
+  viewProductDialog = false;
+  isEditMode = false;
+  editingProductId: string | null = null;
   products: Product[] = [
     {
       id: '1',
@@ -100,36 +176,218 @@ export class Products {
   }
 
   applyFilters(): void {
-  const search = this.searchText.trim().toLowerCase();
+    const search = this.searchText.trim().toLowerCase();
 
-  this.filteredProducts = this.products.filter((product) => {
-    const searchMatch =
-      product.name.toLowerCase().includes(search) ||
-      product.sku.toLowerCase().includes(search) ||
-      product.category.toLowerCase().includes(search);
+    this.filteredProducts = this.products.filter((product) => {
+      const searchMatch =
+        product.name.toLowerCase().includes(search) ||
+        product.sku.toLowerCase().includes(search) ||
+        product.category.toLowerCase().includes(search);
 
-    const categoryMatch =
-      this.selectedCategory === 'All Categories' ||
-      product.category === this.selectedCategory;
+      const categoryMatch =
+        this.selectedCategory === 'All Categories' ||
+        product.category === this.selectedCategory;
 
-    const stockStatus = this.getStockStatus(
-      product.quantity,
-      product.minimumStock
-    );
+      const stockStatus = this.getStockStatus(
+        product.quantity,
+        product.minimumStock
+      );
 
-    const stockMatch =
-      this.selectedStockStatus === 'All' ||
-      stockStatus === this.selectedStockStatus;
+      const stockMatch =
+        this.selectedStockStatus === 'All' ||
+        stockStatus === this.selectedStockStatus;
 
-    return searchMatch && categoryMatch && stockMatch;
-  });
-}
+      return searchMatch && categoryMatch && stockMatch;
+    });
+  }
 
   resetFilters(): void {
-  this.selectedCategory = 'All Categories';
-  this.selectedStockStatus = 'All';
-  this.searchText = '';
+    this.selectedCategory = 'All Categories';
+    this.selectedStockStatus = 'All';
+    this.searchText = '';
 
-  this.applyFilters();
-}
+    this.applyFilters();
+  }
+
+  openAddProductDialog(): void {
+    this.resetProductForm();
+    this.addProductDialog = true;
+  }
+
+  closeAddProductDialog(): void {
+    this.addProductDialog = false;
+    this.resetProductForm();
+  }
+
+  resetProductForm(): void {
+    this.productForm.reset({
+      name: '',
+      sku: '',
+      category: '',
+      purchasePrice: null,
+      sellingPrice: null,
+      quantity: 0,
+      minimumStock: 5,
+      description: '',
+    });
+
+    this.isEditMode = false;
+    this.editingProductId = null;
+  }
+
+  openEditProductDialog(product: Product): void {
+    this.isEditMode = true;
+    this.editingProductId = product.id;
+
+    this.productForm.patchValue({
+      name: product.name,
+      sku: product.sku,
+      category: product.category,
+      purchasePrice: product.purchasePrice,
+      sellingPrice: product.sellingPrice,
+      quantity: product.quantity,
+      minimumStock: product.minimumStock,
+      description: product.description ?? '',
+    });
+
+    this.addProductDialog = true;
+  }
+
+  viewProduct(product: Product): void {
+    this.selectedProduct = product;
+    this.viewProductDialog = true;
+  }
+
+  closeViewProductDialog(): void {
+    this.viewProductDialog = false;
+    this.selectedProduct = null;
+  }
+
+  generateSku(category: string): string {
+    const prefixMap: Record<string, string> = {
+      Electronics: 'ELE',
+      Furniture: 'FUR',
+      Stationery: 'STA'
+    };
+
+    const prefix = prefixMap[category];
+
+    if (!prefix) {
+      return '';
+    }
+
+    const existingNumbers = this.products
+      .filter(product => product.id !== this.editingProductId)
+      .filter(product => product.sku.startsWith(`${prefix}-`))
+      .map(product => Number(product.sku.split('-')[1]))
+      .filter(number => Number.isInteger(number));
+
+    const nextNumber = Math.max(0, ...existingNumbers) + 1;
+
+    return `${prefix}-${String(nextNumber).padStart(3, '0')}`;
+  }
+
+  onCategoryChange(category: string): void {
+    const sku = this.generateSku(category);
+
+    this.productForm.patchValue({
+      sku: sku
+    });
+  }
+
+  showFieldError(fieldName: string, errorName: string): boolean {
+    const field = this.productForm.get(fieldName);
+
+    return !!field?.touched && !!field.hasError(errorName);
+  }
+
+  saveProduct(): void {
+    this.productForm.markAllAsTouched();
+
+    if (this.productForm.invalid) {
+      return;
+    }
+
+    const formValue = this.productForm.getRawValue();
+
+    if (this.isEditMode && this.editingProductId) {
+      this.products = this.products.map((product) =>
+        product.id === this.editingProductId
+          ? {
+            ...product,
+            name: formValue.name.trim(),
+            sku: formValue.sku,
+            category: formValue.category,
+            purchasePrice: Number(formValue.purchasePrice),
+            sellingPrice: Number(formValue.sellingPrice),
+            quantity: Number(formValue.quantity),
+            minimumStock: Number(formValue.minimumStock),
+            description: formValue.description ?? '',
+          }
+          : product
+      );
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Product Updated',
+        detail: 'Product updated successfully.',
+        life: 3000,
+      });
+    } else {
+      const newProduct: Product = {
+        id: crypto.randomUUID(),
+        name: formValue.name.trim(),
+        sku: formValue.sku,
+        category: formValue.category,
+        purchasePrice: Number(formValue.purchasePrice),
+        sellingPrice: Number(formValue.sellingPrice),
+        quantity: Number(formValue.quantity),
+        minimumStock: Number(formValue.minimumStock),
+        description: formValue.description ?? '',
+        status: 'Active',
+        createdAt: new Date(),
+      };
+
+      this.products = [...this.products, newProduct];
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Product Added',
+        detail: 'New product added successfully.',
+        life: 3000,
+      });
+    }
+
+    this.applyFilters();
+    this.closeAddProductDialog();
+  }
+
+  confirmDeleteProduct(product: Product): void {
+    this.confirmationService.confirm({
+      header: 'Delete Product',
+      message: `Are you sure you want to delete "${product.name}"?`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Delete',
+      rejectLabel: 'Cancel',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-secondary',
+      accept: () => {
+        this.products = this.products.filter((item) => item.id !== product.id);
+        this.applyFilters();
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Product Deleted',
+          detail: `${product.name} deleted successfully.`,
+          life: 3000,
+        });
+      },
+    });
+  }
+
+  isInvalid(fieldName: string): boolean {
+    const field = this.productForm.get(fieldName);
+
+    return !!field && field.invalid && (field.dirty || field.touched);
+  }
 }

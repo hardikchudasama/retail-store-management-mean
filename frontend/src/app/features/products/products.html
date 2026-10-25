@@ -1,11 +1,13 @@
 <section class="products-page">
+    <p-toast position="top-right" />
+
     <div class="page-heading">
         <div>
             <h2>Products</h2>
             <p>Manage your store products and inventory.</p>
         </div>
 
-        <button class="add-product-button" type="button">
+        <button class="add-product-button" type="button" (click)="openAddProductDialog()">
             <i class="pi pi-plus"></i>
             Add Product
         </button>
@@ -18,7 +20,7 @@
                 <input type="text" [(ngModel)]="searchText" placeholder="Search by product name, SKU or category..."
                     (input)="applyFilters()" />
             </div>
-            
+
             <!-- Category filter -->
             <p-select [options]="categories" [(ngModel)]="selectedCategory" optionLabel="label" optionValue="value"
                 placeholder="Select Category" styleClass="product-filter" (onChange)="applyFilters()" />
@@ -68,10 +70,34 @@
                         </span>
                     </td>
                     <td>
-                        <button class="action-button" type="button" aria-label="Edit product">
+                        <button
+                            class="action-button view-btn"
+                            type="button"
+                            pTooltip="View Product"
+                            tooltipPosition="top"
+                            aria-label="View Product"
+                            (click)="viewProduct(product)"
+                        >
+                            <i class="pi pi-eye"></i>
+                        </button>
+                        <button
+                            class="action-button"
+                            type="button"
+                            aria-label="Edit product"
+                            pTooltip="Edit Product"
+                            tooltipPosition="top"
+                            (click)="openEditProductDialog(product)"
+                        >
                             <i class="pi pi-pencil"></i>
                         </button>
-                        <button class="action-button delete" type="button" aria-label="Delete product">
+                        <button
+                            class="action-button delete"
+                            type="button"
+                            pTooltip="Delete Product"
+                            tooltipPosition="top"
+                            aria-label="Delete Product"
+                            (click)="confirmDeleteProduct(product)"
+                        >
                             <i class="pi pi-trash"></i>
                         </button>
                     </td>
@@ -88,3 +114,240 @@
         </p-table>
     </div>
 </section>
+
+<p-confirmdialog />
+
+<p-dialog
+  [header]="isEditMode ? 'Edit Product' : 'Add New Product'"
+  [(visible)]="addProductDialog"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '550px', maxWidth: '95vw' }"
+  (onHide)="closeAddProductDialog()"
+>
+  <form [formGroup]="productForm" class="product-form">
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="name">Product Name *</label>
+        <input id="name" type="text" formControlName="name" placeholder="Enter product name" />
+
+        @if (isInvalid('name')) {
+          <small class="error-message">Product name must contain at least 3 characters.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="sku">SKU *</label>
+        <input
+          id="sku"
+          type="text"
+          formControlName="sku"
+          placeholder="SKU will be generated automatically"
+          readonly
+        />
+
+        @if (isInvalid('sku')) {
+          <small class="error-message">SKU is required.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label>Category *</label>
+        <p-select
+          [options]="categories.slice(1)"
+          formControlName="category"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select category"
+          styleClass="form-select"
+          (onChange)="onCategoryChange($event.value)"
+        />
+
+        @if (isInvalid('category')) {
+          <small class="error-message">Please select a category.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="purchasePrice">Purchase Price (₹) *</label>
+        <input
+          id="purchasePrice"
+          type="number"
+          formControlName="purchasePrice"
+          min="0.01"
+          step="0.01"
+          placeholder="Enter purchase price"
+        />
+
+        @if (showFieldError('purchasePrice', 'required')) {
+          <small class="error-message">Purchase price is required.</small>
+        }
+
+        @if (showFieldError('purchasePrice', 'min')) {
+          <small class="error-message">Purchase price must be greater than zero.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="sellingPrice">Selling Price (₹) *</label>
+        <input
+          id="sellingPrice"
+          type="number"
+          formControlName="sellingPrice"
+          min="0.01"
+          step="0.01"
+          placeholder="Enter selling price"
+        />
+
+        @if (showFieldError('sellingPrice', 'required')) {
+          <small class="error-message">Selling price is required.</small>
+        }
+
+        @if (showFieldError('sellingPrice', 'min')) {
+          <small class="error-message">Selling price must be greater than zero.</small>
+        }
+
+        @if (
+          productForm.hasError('sellingPriceBelowPurchase') &&
+          productForm.get('sellingPrice')?.touched
+        ) {
+          <small class="error-message">
+            Selling price cannot be lower than purchase price.
+          </small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="quantity">Available Quantity *</label>
+        <input
+          id="quantity"
+          type="number"
+          formControlName="quantity"
+          min="0"
+          step="1"
+          placeholder="Enter quantity"
+        />
+
+        @if (showFieldError('quantity', 'min')) {
+          <small class="error-message">Quantity cannot be negative.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="minimumStock">Minimum Stock *</label>
+        <input
+          id="minimumStock"
+          type="number"
+          formControlName="minimumStock"
+          min="0"
+          step="1"
+          placeholder="Enter minimum stock"
+        />
+
+        @if (showFieldError('minimumStock', 'min')) {
+          <small class="error-message">Minimum stock cannot be negative.</small>
+        }
+      </div>
+
+      <div class="form-field full-width">
+        <label for="description">Description</label>
+        <textarea
+          id="description"
+          formControlName="description"
+          rows="3"
+          placeholder="Enter product description"
+        ></textarea>
+      </div>
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="cancel-btn" (click)="closeAddProductDialog()">
+      Cancel
+    </button>
+
+    <button
+      type="button"
+      class="add-product-btn"
+      (click)="saveProduct()"
+      [disabled]="productForm.invalid"
+    >
+      <i [class]="isEditMode ? 'pi pi-check' : 'pi pi-plus'"></i>
+      {{ isEditMode ? 'Update Product' : 'Save Product' }}
+    </button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Product Details"
+  [(visible)]="viewProductDialog"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '550px', maxWidth: '95vw' }"
+  (onHide)="closeViewProductDialog()"
+>
+  @if (selectedProduct; as product) {
+    <div class="product-details">
+      <div class="detail-item">
+        <span>Product Name</span>
+        <strong>{{ product.name }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>SKU</span>
+        <strong>{{ product.sku }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Category</span>
+        <strong>{{ product.category }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Purchase Price</span>
+        <strong>{{ product.purchasePrice | currency:'INR':'symbol' }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Selling Price</span>
+        <strong>{{ product.sellingPrice | currency:'INR':'symbol' }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Available Stock</span>
+        <strong>{{ product.quantity }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Minimum Stock</span>
+        <strong>{{ product.minimumStock }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Status</span>
+        <strong>{{ product.status }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <span>Created Date</span>
+        <strong>{{ product.createdAt | date:'dd MMM yyyy' }}</strong>
+      </div>
+
+      <div class="detail-item description-item">
+        <span>Description</span>
+        <strong>{{ product.description || 'No description available' }}</strong>
+      </div>
+    </div>
+  }
+
+  <ng-template #footer>
+    <button
+      type="button"
+      class="add-product-btn"
+      (click)="closeViewProductDialog()"
+    >
+      Close
+    </button>
+  </ng-template>
+</p-dialog>
