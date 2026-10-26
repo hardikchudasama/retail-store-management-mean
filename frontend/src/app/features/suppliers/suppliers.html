@@ -1,0 +1,266 @@
+<section class="suppliers-page">
+  <p-toast position="top-right" />
+
+  <div class="page-heading">
+    <div>
+      <h2>Suppliers</h2>
+      <p>Manage your supplier contacts and company details.</p>
+    </div>
+    <button class="add-supplier-button" type="button" (click)="openAddDialog()">
+      <i class="pi pi-plus"></i>
+      Add Supplier
+    </button>
+  </div>
+
+  <div class="suppliers-card">
+    <div class="suppliers-toolbar">
+      <label class="search-box">
+        <i class="pi pi-search"></i>
+        <input
+          type="search"
+          [(ngModel)]="searchText"
+          placeholder="Search by name, company, phone, email or city..."
+          (input)="applyFilters()"
+        />
+      </label>
+      <p-select
+        [options]="statusOptions"
+        [(ngModel)]="selectedStatus"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="status-filter"
+        ariaLabel="Filter suppliers by status"
+        (onChange)="applyFilters()"
+      />
+      <button
+        class="reset-filter-btn"
+        type="button"
+        pTooltip="Reset filters"
+        aria-label="Reset filters"
+        (click)="resetFilters()"
+      >
+        <i class="pi pi-filter-slash"></i>
+      </button>
+    </div>
+
+    <p-table [value]="filteredSuppliers" [loading]="isLoading" [responsiveLayout]="'scroll'" styleClass="suppliers-table">
+      <ng-template #header>
+        <tr>
+          <th>Supplier</th>
+          <th>Company</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>City</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-supplier>
+        <tr>
+          <td class="supplier-name">{{ supplier.supplierName }}</td>
+          <td>{{ supplier.companyName || '—' }}</td>
+          <td>{{ supplier.phone }}</td>
+          <td>{{ supplier.email || '—' }}</td>
+          <td>{{ supplier.city || '—' }}</td>
+          <td>
+            <span class="supplier-status" [ngClass]="supplier.status.toLowerCase()">
+              {{ supplier.status }}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="action-button" type="button" pTooltip="View Supplier" aria-label="View Supplier" (click)="viewSupplier(supplier)">
+              <i class="pi pi-eye"></i>
+            </button>
+            <button class="action-button" type="button" pTooltip="Edit Supplier" aria-label="Edit Supplier" (click)="openEditDialog(supplier)">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="action-button delete" type="button" pTooltip="Delete Supplier" aria-label="Delete Supplier" (click)="confirmDeleteSupplier(supplier)">
+              <i class="pi pi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7" class="empty-message">No suppliers found.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</section>
+
+<p-confirmdialog />
+
+<p-dialog
+  [(visible)]="supplierDialogVisible"
+  [header]="isEditMode ? 'Update Supplier' : 'Add Supplier'"
+  [modal]="true"
+  [style]="{ width: '650px' }"
+  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="supplierForm" class="supplier-form" (ngSubmit)="saveSupplier()">
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="supplierName">Supplier Name *</label>
+        <input
+          pInputText
+          id="supplierName"
+          formControlName="supplierName"
+          placeholder="Enter supplier name"
+        />
+        @if (supplierForm.get('supplierName')?.touched && supplierForm.get('supplierName')?.invalid) {
+          <small class="error-text">
+            Supplier name is required (minimum 3 characters).
+          </small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="companyName">Company Name</label>
+        <input
+          pInputText
+          id="companyName"
+          formControlName="companyName"
+          placeholder="Enter company name"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="phone">Phone Number *</label>
+        <input
+          pInputText
+          id="phone"
+          formControlName="phone"
+          maxlength="10"
+          placeholder="Enter 10-digit phone number"
+        />
+        @if (supplierForm.get('phone')?.touched && supplierForm.get('phone')?.invalid) {
+          <small class="error-text">
+            Enter a valid 10-digit phone number.
+          </small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input
+          pInputText
+          id="email"
+          formControlName="email"
+          placeholder="Enter email address"
+        />
+        @if (supplierForm.get('email')?.touched && supplierForm.get('email')?.invalid) {
+          <small class="error-text">Enter a valid email address.</small>
+        }
+      </div>
+
+      <div class="form-field full-width">
+        <label for="address">Address</label>
+        <input
+          pInputText
+          id="address"
+          formControlName="address"
+          placeholder="Enter address"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="city">City</label>
+        <input pInputText id="city" formControlName="city" />
+      </div>
+
+      <div class="form-field">
+        <label for="state">State</label>
+        <input pInputText id="state" formControlName="state" />
+      </div>
+
+      <div class="form-field">
+        <label for="postalCode">Postal Code</label>
+        <input
+          pInputText
+          id="postalCode"
+          formControlName="postalCode"
+          maxlength="6"
+          placeholder="6-digit postal code"
+        />
+        @if (supplierForm.get('postalCode')?.touched && supplierForm.get('postalCode')?.invalid) {
+          <small class="error-text">Enter a valid 6-digit postal code.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="status">Status *</label>
+        <p-select
+          id="status"
+          formControlName="status"
+          [options]="[
+            { label: 'Active', value: 'Active' },
+            { label: 'Inactive', value: 'Inactive' }
+          ]"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select status"
+          appendTo="body"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="form-field full-width">
+        <label for="notes">Notes</label>
+        <textarea
+          pTextarea
+          id="notes"
+          formControlName="notes"
+          rows="3"
+          placeholder="Enter additional notes"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [outlined]="true"
+        type="button"
+        (onClick)="supplierDialogVisible = false"
+      />
+
+      <p-button
+        [label]="isEditMode ? 'Update Supplier' : 'Save Supplier'"
+        icon="pi pi-check"
+        type="submit"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  header="Supplier Details"
+  [(visible)]="viewDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '600px', maxWidth: '95vw' }"
+  (onHide)="closeViewDialog()"
+>
+  @if (selectedSupplier; as supplier) {
+    <div class="supplier-details">
+      <div class="detail-item"><span>Supplier Name</span><strong>{{ supplier.supplierName }}</strong></div>
+      <div class="detail-item"><span>Company Name</span><strong>{{ supplier.companyName || '—' }}</strong></div>
+      <div class="detail-item"><span>Phone</span><strong>{{ supplier.phone }}</strong></div>
+      <div class="detail-item"><span>Email</span><strong>{{ supplier.email || '—' }}</strong></div>
+      <div class="detail-item"><span>City</span><strong>{{ supplier.city || '—' }}</strong></div>
+      <div class="detail-item"><span>State</span><strong>{{ supplier.state || '—' }}</strong></div>
+      <div class="detail-item"><span>Postal Code</span><strong>{{ supplier.postalCode || '—' }}</strong></div>
+      <div class="detail-item"><span>Status</span><strong>{{ supplier.status }}</strong></div>
+      <div class="detail-item full-width"><span>Address</span><strong>{{ supplier.address || '—' }}</strong></div>
+      <div class="detail-item full-width"><span>Notes</span><strong>{{ supplier.notes || 'No notes' }}</strong></div>
+      <div class="detail-item"><span>Created Date</span><strong>{{ supplier.createdAt | date:'dd MMM yyyy' }}</strong></div>
+    </div>
+  }
+  <ng-template #footer>
+    <button type="button" class="save-button" (click)="closeViewDialog()">Close</button>
+  </ng-template>
+</p-dialog>
