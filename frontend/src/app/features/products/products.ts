@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Product } from '../../models';
 import { TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
@@ -9,6 +9,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ProductService } from '../../services/product.service';
 import {
   AbstractControl,
   FormBuilder,
@@ -58,13 +59,14 @@ const sellingPriceValidator: ValidatorFn = (
   styleUrl: './products.scss',
   providers: [ConfirmationService, MessageService],
 })
-export class Products {
+export class Products implements OnInit {
   productForm: FormGroup;
 
   constructor(
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private productService: ProductService
   ) {
     this.productForm = this.fb.group(
       {
@@ -89,60 +91,7 @@ export class Products {
   viewProductDialog = false;
   isEditMode = false;
   editingProductId: string | null = null;
-  products: Product[] = [
-    {
-      id: '1',
-      name: 'Wireless Mouse',
-      sku: 'WM-001',
-      category: 'Electronics',
-      purchasePrice: 350,
-      sellingPrice: 550,
-      quantity: 25,
-      minimumStock: 10,
-      description: 'Wireless optical mouse',
-      status: 'Active',
-      createdAt: new Date('2026-10-20'),
-    },
-    {
-      id: '2',
-      name: 'Office Chair',
-      sku: 'OC-002',
-      category: 'Furniture',
-      purchasePrice: 2500,
-      sellingPrice: 3500,
-      quantity: 8,
-      minimumStock: 5,
-      description: 'Ergonomic office chair',
-      status: 'Active',
-      createdAt: new Date('2026-10-19'),
-    },
-    {
-      id: '3',
-      name: 'USB Keyboard',
-      sku: 'UK-003',
-      category: 'Electronics',
-      purchasePrice: 450,
-      sellingPrice: 700,
-      quantity: 5,
-      minimumStock: 10,
-      description: 'USB wired keyboard',
-      status: 'Active',
-      createdAt: new Date('2026-10-18'),
-    },
-    {
-      id: '4',
-      name: 'Notebook',
-      sku: 'NB-004',
-      category: 'Stationery',
-      purchasePrice: 30,
-      sellingPrice: 50,
-      quantity: 100,
-      minimumStock: 20,
-      description: 'A4 ruled notebook',
-      status: 'Active',
-      createdAt: new Date('2026-10-17'),
-    },
-  ];
+  products: Product[] = [];
 
   categories = [
     { label: 'All Categories', value: 'All Categories' },
@@ -161,7 +110,35 @@ export class Products {
   selectedCategory = 'All Categories';
   selectedStockStatus = 'All';
 
-  filteredProducts: Product[] = [...this.products];
+  filteredProducts: Product[] = [];
+  isLoading = false;
+
+  ngOnInit(): void {
+    this.loadProducts();
+  }
+
+  loadProducts(): void {
+    this.isLoading = true;
+
+    this.productService.getProducts().subscribe({
+      next: (products) => {
+        this.products = products;
+        this.applyFilters();
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Failed to load products:', error);
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: error.error?.message || 'Failed to load products.',
+        });
+
+        this.isLoading = false;
+      },
+    });
+  }
 
   getStockStatus(quantity: number, minimumStock: number): string {
     if (quantity === 0) {
@@ -254,8 +231,19 @@ export class Products {
   }
 
   viewProduct(product: Product): void {
-    this.selectedProduct = product;
-    this.viewProductDialog = true;
+    this.productService.getProductById(product.id).subscribe({
+      next: (selectedProduct) => {
+        this.selectedProduct = selectedProduct;
+        this.viewProductDialog = true;
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: error.error?.message || 'Failed to load product details.',
+        });
+      },
+    });
   }
 
   closeViewProductDialog(): void {
@@ -309,57 +297,60 @@ export class Products {
     }
 
     const formValue = this.productForm.getRawValue();
+    const productData = {
+      name: formValue.name.trim(),
+      sku: formValue.sku,
+      category: formValue.category,
+      purchasePrice: Number(formValue.purchasePrice),
+      sellingPrice: Number(formValue.sellingPrice),
+      quantity: Number(formValue.quantity),
+      minimumStock: Number(formValue.minimumStock),
+      description: formValue.description ?? '',
+    };
 
     if (this.isEditMode && this.editingProductId) {
-      this.products = this.products.map((product) =>
-        product.id === this.editingProductId
-          ? {
-            ...product,
-            name: formValue.name.trim(),
-            sku: formValue.sku,
-            category: formValue.category,
-            purchasePrice: Number(formValue.purchasePrice),
-            sellingPrice: Number(formValue.sellingPrice),
-            quantity: Number(formValue.quantity),
-            minimumStock: Number(formValue.minimumStock),
-            description: formValue.description ?? '',
-          }
-          : product
-      );
+      this.productService
+        .updateProduct(this.editingProductId, productData)
+        .subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Product Updated',
+              detail: 'Product updated successfully.',
+            });
 
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Product Updated',
-        detail: 'Product updated successfully.',
-        life: 3000,
-      });
+            this.loadProducts();
+            this.closeAddProductDialog();
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Update Failed',
+              detail: error.error?.message || 'Failed to update product.',
+            });
+          },
+        });
     } else {
-      const newProduct: Product = {
-        id: crypto.randomUUID(),
-        name: formValue.name.trim(),
-        sku: formValue.sku,
-        category: formValue.category,
-        purchasePrice: Number(formValue.purchasePrice),
-        sellingPrice: Number(formValue.sellingPrice),
-        quantity: Number(formValue.quantity),
-        minimumStock: Number(formValue.minimumStock),
-        description: formValue.description ?? '',
-        status: 'Active',
-        createdAt: new Date(),
-      };
+      this.productService.createProduct(productData).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Product Added',
+            detail: 'New product added successfully.',
+          });
 
-      this.products = [...this.products, newProduct];
-
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Product Added',
-        detail: 'New product added successfully.',
-        life: 3000,
+          this.loadProducts();
+          this.closeAddProductDialog();
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Add Failed',
+            detail: error.error?.message || 'Failed to add product.',
+          });
+        },
       });
     }
-
-    this.applyFilters();
-    this.closeAddProductDialog();
   }
 
   confirmDeleteProduct(product: Product): void {
@@ -372,14 +363,23 @@ export class Products {
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-secondary',
       accept: () => {
-        this.products = this.products.filter((item) => item.id !== product.id);
-        this.applyFilters();
+        this.productService.deleteProduct(product.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Product Deleted',
+              detail: `${product.name} deleted successfully.`,
+            });
 
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Product Deleted',
-          detail: `${product.name} deleted successfully.`,
-          life: 3000,
+            this.loadProducts();
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Delete Failed',
+              detail: error.error?.message || 'Failed to delete product.',
+            });
+          },
         });
       },
     });

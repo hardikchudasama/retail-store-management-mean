@@ -19,4 +19,5 @@ export interface Product {
   description?: string;
   status: 'Active' | 'Inactive';
   createdAt: Date;
+  updatedAt?: Date;
 }

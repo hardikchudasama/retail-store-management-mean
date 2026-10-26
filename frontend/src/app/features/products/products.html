@@ -37,7 +37,8 @@
             </button>
         </div>
 
-        <p-table #dt [value]="filteredProducts" [globalFilterFields]="['name', 'sku', 'category']"
+        <p-table #dt [value]="filteredProducts" [loading]="isLoading"
+            [globalFilterFields]="['name', 'sku', 'category']"
             [responsiveLayout]="'scroll'" styleClass="products-table">
             <ng-template #header>
                 <tr>

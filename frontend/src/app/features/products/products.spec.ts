@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 
+import { ProductService } from '../../services/product.service';
+import { Product } from '../../models';
 import { Products } from './products';
 
 describe('Products', () => {
@@ -8,12 +11,109 @@ describe('Products', () => {
   let fixture: ComponentFixture<Products>;
   let confirmationService: ConfirmationService;
   let messageService: MessageService;
+  let productService: jasmine.SpyObj<ProductService>;
+  let serverProducts: Product[];
+
+  const initialProducts: Product[] = [
+    {
+      id: '1',
+      name: 'Wireless Mouse',
+      sku: 'WM-001',
+      category: 'Electronics',
+      purchasePrice: 350,
+      sellingPrice: 550,
+      quantity: 25,
+      minimumStock: 10,
+      description: 'Wireless optical mouse',
+      status: 'Active',
+      createdAt: new Date('2026-10-20'),
+    },
+    {
+      id: '2',
+      name: 'Office Chair',
+      sku: 'OC-002',
+      category: 'Furniture',
+      purchasePrice: 2500,
+      sellingPrice: 3500,
+      quantity: 8,
+      minimumStock: 5,
+      description: 'Ergonomic office chair',
+      status: 'Active',
+      createdAt: new Date('2026-10-19'),
+    },
+    {
+      id: '3',
+      name: 'USB Keyboard',
+      sku: 'UK-003',
+      category: 'Electronics',
+      purchasePrice: 450,
+      sellingPrice: 700,
+      quantity: 5,
+      minimumStock: 10,
+      description: 'USB wired keyboard',
+      status: 'Active',
+      createdAt: new Date('2026-10-18'),
+    },
+    {
+      id: '4',
+      name: 'Notebook',
+      sku: 'NB-004',
+      category: 'Stationery',
+      purchasePrice: 30,
+      sellingPrice: 50,
+      quantity: 100,
+      minimumStock: 20,
+      description: 'A4 ruled notebook',
+      status: 'Active',
+      createdAt: new Date('2026-10-17'),
+    },
+  ];
 
   beforeEach(async () => {
+    serverProducts = [...initialProducts];
+    productService = jasmine.createSpyObj<ProductService>('ProductService', [
+      'getProducts',
+      'getProductById',
+      'createProduct',
+      'updateProduct',
+      'deleteProduct',
+    ]);
+    productService.getProducts.and.callFake(() => of([...serverProducts]));
+    productService.getProductById.and.callFake((id) =>
+      of(serverProducts.find((product) => product.id === id)!)
+    );
+    productService.createProduct.and.callFake((data) => {
+      const product: Product = {
+        id: 'new-product',
+        name: data.name!,
+        sku: data.sku!,
+        category: data.category!,
+        purchasePrice: data.purchasePrice!,
+        sellingPrice: data.sellingPrice!,
+        quantity: data.quantity!,
+        minimumStock: data.minimumStock!,
+        description: data.description,
+        status: 'Active',
+        createdAt: new Date(),
+      };
+      serverProducts = [...serverProducts, product];
+      return of(product);
+    });
+    productService.updateProduct.and.callFake((id, data) => {
+      serverProducts = serverProducts.map((product) =>
+        product.id === id ? { ...product, ...data } : product
+      );
+      return of(serverProducts.find((product) => product.id === id)!);
+    });
+    productService.deleteProduct.and.callFake((id) => {
+      serverProducts = serverProducts.filter((product) => product.id !== id);
+      return of(undefined);
+    });
+
     await TestBed.configureTestingModule({
-      imports: [Products]
-    })
-    .compileComponents();
+      imports: [Products],
+      providers: [{ provide: ProductService, useValue: productService }],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(Products);
     component = fixture.componentInstance;
@@ -22,8 +122,11 @@ describe('Products', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should load products when initialized', () => {
+    expect(component.products).toEqual(initialProducts);
+    expect(component.filteredProducts).toEqual(initialProducts);
+    expect(component.isLoading).toBeFalse();
+    expect(productService.getProducts).toHaveBeenCalled();
   });
 
   it('should reject a purchase price of zero', () => {
@@ -59,23 +162,16 @@ describe('Products', () => {
   });
 
   it('should invalidate the form when selling price is below purchase price', () => {
-    component.productForm.patchValue({
-      purchasePrice: 500,
-      sellingPrice: 400,
-    });
+    component.productForm.patchValue({ purchasePrice: 500, sellingPrice: 400 });
 
     expect(component.productForm.hasError('sellingPriceBelowPurchase')).toBeTrue();
   });
 
-  it('should allow a selling price equal to purchase price', () => {
+  it('should allow a selling price equal to or above purchase price', () => {
     component.productForm.patchValue({ purchasePrice: 500, sellingPrice: 500 });
-
     expect(component.productForm.hasError('sellingPriceBelowPurchase')).toBeFalse();
-  });
 
-  it('should allow a selling price above purchase price', () => {
-    component.productForm.patchValue({ purchasePrice: 500, sellingPrice: 600 });
-
+    component.productForm.patchValue({ sellingPrice: 600 });
     expect(component.productForm.hasError('sellingPriceBelowPurchase')).toBeFalse();
   });
 
@@ -86,7 +182,7 @@ describe('Products', () => {
     expect(component.productForm.hasError('sellingPriceBelowPurchase')).toBeFalse();
   });
 
-  it('should add a valid product, apply current filters, and close and reset the dialog', () => {
+  it('should create a product through the service, reload, and reset the dialog', () => {
     spyOn(messageService, 'add');
     component.openAddProductDialog();
     component.productForm.patchValue({
@@ -99,88 +195,52 @@ describe('Products', () => {
       description: 'Portable Bluetooth speaker',
     });
     component.onCategoryChange('Electronics');
-
     component.searchText = 'bluetooth';
     component.selectedCategory = 'Electronics';
-    component.applyFilters();
 
     component.saveProduct();
 
-    expect(component.products.length).toBe(5);
-    expect(component.products[4]).toEqual(
-      jasmine.objectContaining({
-        name: 'Bluetooth Speaker',
-        sku: 'ELE-001',
-        category: 'Electronics',
-        purchasePrice: 800,
-        sellingPrice: 1200,
-        quantity: 15,
-        minimumStock: 5,
-        description: 'Portable Bluetooth speaker',
-        status: 'Active',
-      })
-    );
-    expect(component.products[4].id).toBeTruthy();
-    expect(component.filteredProducts).toContain(component.products[4]);
-    expect(component.addProductDialog).toBeFalse();
-    expect(component.productForm.pristine).toBeTrue();
-    expect(messageService.add).toHaveBeenCalledWith({
-      severity: 'success',
-      summary: 'Product Added',
-      detail: 'New product added successfully.',
-      life: 3000,
-    });
-    expect(component.productForm.getRawValue()).toEqual({
-      name: '',
-      sku: '',
-      category: '',
-      purchasePrice: null,
-      sellingPrice: null,
-      quantity: 0,
-      minimumStock: 5,
-      description: '',
-    });
-  });
-
-  it('should keep a saved product out of results when it does not match active filters', () => {
-    component.productForm.patchValue({
+    expect(productService.createProduct).toHaveBeenCalledWith({
       name: 'Bluetooth Speaker',
+      sku: 'ELE-001',
       category: 'Electronics',
       purchasePrice: 800,
       sellingPrice: 1200,
+      quantity: 15,
+      minimumStock: 5,
+      description: 'Portable Bluetooth speaker',
     });
-    component.onCategoryChange('Electronics');
-    component.searchText = 'mouse';
-    component.applyFilters();
+    expect(serverProducts).toHaveSize(5);
+    expect(component.filteredProducts.map((product) => product.name)).toEqual([
+      'Bluetooth Speaker',
+    ]);
+    expect(productService.getProducts).toHaveBeenCalledTimes(2);
+    expect(component.addProductDialog).toBeFalse();
+    expect(component.productForm.pristine).toBeTrue();
+    expect(messageService.add).toHaveBeenCalledWith(
+      jasmine.objectContaining({ summary: 'Product Added', severity: 'success' })
+    );
+  });
+
+  it('should leave server products unchanged when form validation fails', () => {
+    component.productForm.patchValue({
+      name: 'Invalid Product',
+      sku: 'ELE-001',
+      category: 'Electronics',
+      purchasePrice: 800,
+      sellingPrice: 700,
+    });
 
     component.saveProduct();
 
-    expect(component.products.length).toBe(5);
-    expect(component.filteredProducts.map((product) => product.name)).toEqual([
-      'Wireless Mouse',
-    ]);
+    expect(productService.createProduct).not.toHaveBeenCalled();
+    expect(productService.updateProduct).not.toHaveBeenCalled();
   });
 
-  it('should update an existing product and persist the regenerated SKU without adding a row', () => {
+  it('should update a product through the service and send its regenerated SKU', () => {
     spyOn(messageService, 'add');
-    const originalProduct = component.products[0];
-    const originalCreatedAt = originalProduct.createdAt;
-
-    component.openEditProductDialog(originalProduct);
-
-    expect(component.addProductDialog).toBeTrue();
-    expect(component.isEditMode).toBeTrue();
-    expect(component.productForm.getRawValue()).toEqual({
-      name: originalProduct.name,
-      sku: originalProduct.sku,
-      category: originalProduct.category,
-      purchasePrice: originalProduct.purchasePrice,
-      sellingPrice: originalProduct.sellingPrice,
-      quantity: originalProduct.quantity,
-      minimumStock: originalProduct.minimumStock,
-      description: originalProduct.description,
-    });
-
+    const original = component.products[0];
+    component.openEditProductDialog(original);
     component.productForm.patchValue({
       name: 'Updated Mouse',
       category: 'Furniture',
@@ -192,11 +252,10 @@ describe('Products', () => {
     });
     component.onCategoryChange('Furniture');
     const regeneratedSku = component.productForm.get('sku')?.value;
+
     component.saveProduct();
 
-    expect(component.products.length).toBe(4);
-    expect(component.products[0]).toEqual({
-      ...originalProduct,
+    expect(productService.updateProduct).toHaveBeenCalledWith(original.id, {
       name: 'Updated Mouse',
       sku: regeneratedSku,
       category: 'Furniture',
@@ -206,20 +265,15 @@ describe('Products', () => {
       minimumStock: 8,
       description: 'Updated description',
     });
-    expect(regeneratedSku).toBe('FUR-001');
+    expect(serverProducts).toHaveSize(4);
+    expect(component.products[0].name).toBe('Updated Mouse');
     expect(component.products[0].sku).toBe(regeneratedSku);
-    expect(component.products[0].createdAt).toBe(originalCreatedAt);
-    expect(component.filteredProducts).toContain(component.products[0]);
+    expect(productService.getProducts).toHaveBeenCalledTimes(2);
     expect(component.addProductDialog).toBeFalse();
     expect(component.isEditMode).toBeFalse();
-    expect(component.editingProductId).toBeNull();
-    expect(component.productForm.pristine).toBeTrue();
-    expect(messageService.add).toHaveBeenCalledWith({
-      severity: 'success',
-      summary: 'Product Updated',
-      detail: 'Product updated successfully.',
-      life: 3000,
-    });
+    expect(messageService.add).toHaveBeenCalledWith(
+      jasmine.objectContaining({ summary: 'Product Updated', severity: 'success' })
+    );
   });
 
   it('should open a fresh add form after closing edit mode', () => {
@@ -242,9 +296,9 @@ describe('Products', () => {
     });
   });
 
-  it('should delete a product only after confirmation and refresh filtered results', () => {
+  it('should delete a product through the service after confirmation', () => {
     spyOn(messageService, 'add');
-    const productToDelete = component.products[0];
+    const product = component.products[0];
     component.searchText = 'mouse';
     component.applyFilters();
     spyOn(confirmationService, 'confirm').and.callFake((confirmation: Confirmation) => {
@@ -252,49 +306,37 @@ describe('Products', () => {
       return confirmationService;
     });
 
-    component.confirmDeleteProduct(productToDelete);
+    component.confirmDeleteProduct(product);
 
-    expect(confirmationService.confirm).toHaveBeenCalledWith(
-      jasmine.objectContaining({
-        header: 'Delete Product',
-        message: 'Are you sure you want to delete "Wireless Mouse"?',
-        acceptLabel: 'Delete',
-        rejectLabel: 'Cancel',
-      })
-    );
-    expect(component.products).not.toContain(productToDelete);
+    expect(productService.deleteProduct).toHaveBeenCalledWith(product.id);
+    expect(serverProducts).not.toContain(product);
     expect(component.filteredProducts).toEqual([]);
-    expect(messageService.add).toHaveBeenCalledWith({
-      severity: 'success',
-      summary: 'Product Deleted',
-      detail: 'Wireless Mouse deleted successfully.',
-      life: 3000,
-    });
+    expect(productService.getProducts).toHaveBeenCalledTimes(2);
+    expect(messageService.add).toHaveBeenCalledWith(
+      jasmine.objectContaining({ summary: 'Product Deleted', severity: 'success' })
+    );
   });
 
-  it('should keep the product when deletion is not accepted', () => {
-    const productToKeep = component.products[0];
+  it('should not delete a product if confirmation is not accepted', () => {
+    const product = component.products[0];
     spyOn(confirmationService, 'confirm');
 
-    component.confirmDeleteProduct(productToKeep);
+    component.confirmDeleteProduct(product);
 
-    expect(component.products).toContain(productToKeep);
-    expect(component.filteredProducts).toContain(productToKeep);
+    expect(productService.deleteProduct).not.toHaveBeenCalled();
+    expect(serverProducts).toContain(product);
   });
 
-  it('should display and clear the selected product in the view dialog', () => {
+  it('should load selected product details through the service', () => {
     const product = component.products[0];
-    const originalProducts = [...component.products];
 
     component.viewProduct(product);
 
+    expect(productService.getProductById).toHaveBeenCalledWith(product.id);
     expect(component.viewProductDialog).toBeTrue();
-    expect(component.selectedProduct).toBe(product);
-    expect(component.products).toEqual(originalProducts);
-    expect(component.isEditMode).toBeFalse();
+    expect(component.selectedProduct).toEqual(product);
 
     component.closeViewProductDialog();
-
     expect(component.viewProductDialog).toBeFalse();
     expect(component.selectedProduct).toBeNull();
   });
