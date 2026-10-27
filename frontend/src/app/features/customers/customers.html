@@ -1,0 +1,283 @@
+<section class="customers-page">
+  <p-toast position="top-right" />
+  <p-confirmDialog />
+
+  <div class="page-header">
+    <div>
+      <h2>Customer Management</h2>
+      <p>Manage your store customers and their details.</p>
+    </div>
+    <p-button label="Add Customer" icon="pi pi-plus" (onClick)="openCreateDialog()" />
+  </div>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="summary-icon total">
+        <i class="pi pi-users"></i>
+      </div>
+      <div>
+        <span>Total Customers</span>
+        <h3>{{ totalCustomers }}</h3>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon active">
+        <i class="pi pi-user-plus"></i>
+      </div>
+      <div>
+        <span>Active Customers</span>
+        <h3>{{ activeCustomers }}</h3>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon inactive">
+        <i class="pi pi-user-minus"></i>
+      </div>
+      <div>
+        <span>Inactive Customers</span>
+        <h3>{{ inactiveCustomers }}</h3>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon new">
+        <i class="pi pi-calendar-plus"></i>
+      </div>
+      <div>
+        <span>New This Month</span>
+        <h3>{{ newCustomersThisMonth }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="filter-section">
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          [(ngModel)]="searchText"
+          placeholder="Search name, phone or email..."
+          aria-label="Search customers"
+        />
+      </div>
+      <p-select
+        [options]="statusOptions"
+        [(ngModel)]="selectedStatus"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Filter status"
+        styleClass="customer-filter"
+        ariaLabel="Filter customers by status"
+      />
+      <button
+        type="button"
+        class="reset-filter-btn"
+        pTooltip="Reset all filters"
+        tooltipPosition="top"
+        aria-label="Reset all filters"
+        (click)="resetFilters()"
+      >
+        <i class="pi pi-filter-slash"></i>
+      </button>
+    </div>
+
+    <p-table
+      [value]="filteredCustomers"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [responsiveLayout]="'scroll'"
+      [globalFilterFields]="['customerName', 'phone', 'email']"
+      dataKey="id"
+      styleClass="customers-table"
+      emptyMessage="No customers found"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Customer</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>City</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-customer>
+        <tr>
+          <td class="customer-name">{{ customer.customerName }}</td>
+          <td>{{ customer.phone }}</td>
+          <td>{{ customer.email || '-' }}</td>
+          <td>{{ customer.city || '-' }}</td>
+          <td>
+            <p-tag
+              [value]="customer.status"
+              [severity]="customer.status === 'Active' ? 'success' : 'danger'"
+            />
+          </td>
+          <td class="actions">
+            <p-button
+              icon="pi pi-eye"
+              [text]="true"
+              severity="info"
+              pTooltip="View customer"
+              ariaLabel="View customer"
+              (onClick)="openViewDialog(customer)"
+            />
+            <p-button
+              icon="pi pi-pencil"
+              [text]="true"
+              severity="secondary"
+              pTooltip="Edit customer"
+              ariaLabel="Edit customer"
+              (onClick)="openEditDialog(customer)"
+            />
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              severity="danger"
+              pTooltip="Delete customer"
+              ariaLabel="Delete customer"
+              (onClick)="confirmDelete(customer)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="6" class="empty-message">No customers found.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</section>
+
+<p-dialog
+  [(visible)]="customerDialogVisible"
+  [header]="isEditMode ? 'Update Customer' : 'Add Customer'"
+  [modal]="true"
+  [style]="{ width: '650px' }"
+  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="customerForm" class="customer-form" (ngSubmit)="saveCustomer()">
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="customerName">Customer Name *</label>
+        <input pInputText id="customerName" formControlName="customerName" placeholder="Enter customer name" />
+        @if (customerForm.controls.customerName.touched && customerForm.controls.customerName.invalid) {
+          <small class="error-text">Enter at least 3 characters.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="phone">Phone Number *</label>
+        <input pInputText id="phone" formControlName="phone" maxlength="10" placeholder="10-digit phone number" />
+        @if (customerForm.controls.phone.touched && customerForm.controls.phone.invalid) {
+          <small class="error-text">Enter a valid 10-digit phone number.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input pInputText id="email" formControlName="email" placeholder="Enter email address" />
+        @if (customerForm.controls.email.touched && customerForm.controls.email.invalid) {
+          <small class="error-text">Enter a valid email address.</small>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="status">Status *</label>
+        <p-select
+          inputId="status"
+          formControlName="status"
+          [options]="[
+            { label: 'Active', value: 'Active' },
+            { label: 'Inactive', value: 'Inactive' }
+          ]"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select status"
+          appendTo="body"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="form-field full-width">
+        <label for="address">Address</label>
+        <input pInputText id="address" formControlName="address" placeholder="Enter address" />
+      </div>
+
+      <div class="form-field">
+        <label for="city">City</label>
+        <input pInputText id="city" formControlName="city" />
+      </div>
+
+      <div class="form-field">
+        <label for="state">State</label>
+        <input pInputText id="state" formControlName="state" />
+      </div>
+
+      <div class="form-field">
+        <label for="postalCode">Postal Code</label>
+        <input pInputText id="postalCode" formControlName="postalCode" maxlength="6" placeholder="6-digit postal code" />
+        @if (customerForm.controls.postalCode.touched && customerForm.controls.postalCode.invalid) {
+          <small class="error-text">Enter a valid 6-digit postal code.</small>
+        }
+      </div>
+
+      <div class="form-field full-width">
+        <label for="notes">Notes</label>
+        <textarea pTextarea id="notes" formControlName="notes" rows="3" placeholder="Enter additional notes"></textarea>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [outlined]="true"
+        type="button"
+        (onClick)="customerDialogVisible = false"
+      />
+      <p-button
+        [label]="isEditMode ? 'Update Customer' : 'Save Customer'"
+        icon="pi pi-check"
+        type="submit"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="viewDialogVisible"
+  header="Customer Details"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '550px' }"
+  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
+>
+  @if (selectedCustomer; as customer) {
+    <div class="details-grid">
+      <div><span>Customer Name</span><strong>{{ customer.customerName }}</strong></div>
+      <div><span>Phone</span><strong>{{ customer.phone }}</strong></div>
+      <div><span>Email</span><strong>{{ customer.email || '-' }}</strong></div>
+      <div><span>City</span><strong>{{ customer.city || '-' }}</strong></div>
+      <div><span>State</span><strong>{{ customer.state || '-' }}</strong></div>
+      <div><span>Postal Code</span><strong>{{ customer.postalCode || '-' }}</strong></div>
+      <div class="full-width"><span>Address</span><strong>{{ customer.address || '-' }}</strong></div>
+      <div>
+        <span>Status</span>
+        <p-tag
+          [value]="customer.status"
+          [severity]="customer.status === 'Active' ? 'success' : 'danger'"
+        />
+      </div>
+      <div class="full-width"><span>Notes</span><strong>{{ customer.notes || '-' }}</strong></div>
+    </div>
+  }
+</p-dialog>
