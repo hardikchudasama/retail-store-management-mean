@@ -5,6 +5,7 @@ const app = express();
 const productRoutes = require('./routes/productRoutes');
 const supplierRoutes = require('./routes/supplierRoutes');
 const customerRoutes = require('./routes/customerRoutes');
+const purchaseRoutes = require('./routes/purchaseRoutes');
 
 // Middleware
 app.use(cors({
@@ -25,5 +26,6 @@ app.get('/api/health', (req, res) => {
 app.use('/api/products', productRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/purchases', purchaseRoutes);
 
 module.exports = app;
