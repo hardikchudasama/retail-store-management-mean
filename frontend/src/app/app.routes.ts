@@ -3,6 +3,8 @@ import { MainLayout } from './layout/main-layout/main-layout';
 import { Products } from './features/products/products';
 import { Suppliers } from './features/suppliers/suppliers';
 import { Customers } from './features/customers/customers';
+import { Purchases } from './features/purchases/purchases';
+import { PurchaseOrders } from './features/purchase-orders/purchase-orders';
 
 export const routes: Routes = [
   {
@@ -31,6 +33,16 @@ export const routes: Routes = [
       {
         path: 'customers',
         component: Customers,
+      },
+      {
+        path: 'purchases',
+        loadComponent: () =>
+          import('./features/purchases/purchases')
+            .then(m => m.Purchases),
+      },
+      {
+        path: 'purchase-orders',
+        component: PurchaseOrders,
       },
     ]
   },

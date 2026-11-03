@@ -1,0 +1,351 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="purchase-orders-page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <h2>Purchase Orders</h2>
+      <p>Create and manage orders placed with your suppliers.</p>
+    </div>
+
+    <p-button
+      label="Create Purchase Order"
+      icon="pi pi-plus"
+      (onClick)="openCreateDialog()"
+    />
+  </div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="summary-grid">
+
+    <div class="summary-card">
+      <div class="summary-icon blue">
+        <i class="pi pi-shopping-cart"></i>
+      </div>
+      <div>
+        <span>Total Orders</span>
+        <h3>{{ purchaseOrders.length }}</h3>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon gray">
+        <i class="pi pi-file-edit"></i>
+      </div>
+      <div>
+        <span>Draft Orders</span>
+        <h3>{{ draftOrdersCount }}</h3>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon orange">
+        <i class="pi pi-truck"></i>
+      </div>
+      <div>
+        <span>Pending Orders</span>
+        <h3>{{ pendingOrdersCount }}</h3>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-icon green">
+        <i class="pi pi-check-circle"></i>
+      </div>
+      <div>
+        <span>Received Orders</span>
+        <h3>{{ receivedOrdersCount }}</h3>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PURCHASE ORDER TABLE -->
+  <div class="table-card">
+
+    <div class="table-header">
+      <div>
+        <h3>Purchase Order List</h3>
+        <p>Track orders and supplier deliveries.</p>
+      </div>
+
+      <input
+        pInputText
+        type="text"
+        placeholder="Search PO number, supplier or status..."
+        [(ngModel)]="searchText"
+      />
+    </div>
+
+    <p-table
+      [value]="filteredPurchaseOrders"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [tableStyle]="{ 'min-width': '950px' }"
+      responsiveLayout="scroll"
+      dataKey="_id"
+      emptyMessage="No purchase orders found."
+    >
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th>PO Number</th>
+          <th>Supplier</th>
+          <th>Order Date</th>
+          <th>Expected Delivery</th>
+          <th>Items</th>
+          <th>Subtotal</th>
+          <th>Status</th>
+          <th class="actions-column">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-order>
+        <tr>
+          <td><span class="order-number">{{ order.purchaseOrderNumber }}</span></td>
+          <td><span class="supplier-name">{{ getSupplierName(order) }}</span></td>
+          <td>{{ order.orderDate | date: 'dd MMM yyyy' }}</td>
+          <td>{{ order.expectedDeliveryDate ? (order.expectedDeliveryDate | date: 'dd MMM yyyy') : '—' }}</td>
+          <td>{{ order.items.length }}</td>
+          <td><strong>{{ formatCurrency(order.subtotal) }}</strong></td>
+          <td><p-tag [value]="order.status" [severity]="getStatusSeverity(order.status)" /></td>
+          <td>
+            <div class="action-buttons">
+              <p-button icon="pi pi-eye" severity="info" [text]="true" [rounded]="true" pTooltip="View details" tooltipPosition="top" (onClick)="viewPurchaseOrder(order)" />
+              <p-button *ngIf="order.status === 'Draft'" icon="pi pi-pencil" severity="secondary" [text]="true" [rounded]="true" pTooltip="Edit draft" tooltipPosition="top" (onClick)="editPurchaseOrder(order)" />
+              <p-button *ngIf="order.status === 'Draft'" icon="pi pi-send" severity="success" [text]="true" [rounded]="true" pTooltip="Place order" tooltipPosition="top" (onClick)="confirmPlacePurchaseOrder(order)" />
+              <p-button *ngIf="order.status === 'Draft' || order.status === 'Ordered'" icon="pi pi-times" severity="danger" [text]="true" [rounded]="true" pTooltip="Cancel order" tooltipPosition="top" (onClick)="cancelPurchaseOrder(order)" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-message">No purchase orders found.</td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+  </div>
+
+</div>
+
+<!-- CREATE / EDIT PURCHASE ORDER DIALOG -->
+
+<p-dialog
+  [(visible)]="purchaseOrderDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '850px', maxWidth: '95vw' }"
+  [header]="isEditMode ? 'Edit Draft Purchase Order' : 'Create Purchase Order'"
+  (onHide)="selectedPurchaseOrder = null"
+>
+  <form [formGroup]="purchaseOrderForm" class="purchase-order-form">
+
+    <div class="form-section">
+      <h3>Order Information</h3>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Supplier <span class="required">*</span></label>
+          <p-select
+            formControlName="supplier"
+            [options]="suppliers"
+            optionLabel="supplierName"
+            optionValue="_id"
+            placeholder="Select supplier"
+            [filter]="true"
+            filterBy="supplierName,companyName"
+            appendTo="body"
+            [class.ng-invalid]="purchaseOrderForm.get('supplier')?.invalid && purchaseOrderForm.get('supplier')?.touched"
+          />
+          <small class="error-text" *ngIf="purchaseOrderForm.get('supplier')?.invalid && purchaseOrderForm.get('supplier')?.touched">
+            Please select a supplier.
+          </small>
+        </div>
+
+        <div class="form-field">
+          <label>Order Date <span class="required">*</span></label>
+          <p-datepicker formControlName="orderDate" dateFormat="dd M yy" [showIcon]="true" appendTo="body" />
+        </div>
+
+        <div class="form-field">
+          <label>Expected Delivery Date</label>
+          <p-datepicker
+            formControlName="expectedDeliveryDate"
+            dateFormat="dd M yy"
+            [showIcon]="true"
+            [minDate]="purchaseOrderForm.get('orderDate')?.value"
+            appendTo="body"
+            placeholder="Select expected date"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-heading">
+        <div>
+          <h3>Products</h3>
+          <p>Add products and their expected quantities.</p>
+        </div>
+        <p-button label="Add Product" icon="pi pi-plus" severity="secondary" [outlined]="true" size="small" (onClick)="addItem()" />
+      </div>
+
+      <div formArrayName="items">
+        <div
+          class="product-item-card"
+          *ngFor="let item of items.controls; let i = index"
+          [formGroupName]="i"
+        >
+          <div class="product-item-header">
+            <strong>Product {{ i + 1 }}</strong>
+            <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" pTooltip="Remove product" (onClick)="removeItem(i)" />
+          </div>
+
+          <div class="product-item-grid">
+            <div class="form-field product-field">
+              <label>Product <span class="required">*</span></label>
+              <p-select
+                formControlName="product"
+                [options]="products"
+                optionLabel="name"
+                optionValue="_id"
+                placeholder="Select product"
+                [filter]="true"
+                filterBy="name,sku"
+                appendTo="body"
+                (onChange)="onProductChange(i)"
+              />
+            </div>
+
+            <div class="form-field">
+              <label>Ordered Quantity <span class="required">*</span></label>
+              <p-inputNumber
+                formControlName="orderedQuantity"
+                [min]="1"
+                [showButtons]="true"
+                buttonLayout="horizontal"
+                decrementButtonIcon="pi pi-minus"
+                incrementButtonIcon="pi pi-plus"
+              />
+            </div>
+
+            <div class="form-field">
+              <label>Estimated Price <span class="required">*</span></label>
+              <p-inputNumber
+                formControlName="estimatedPurchasePrice"
+                mode="currency"
+                currency="INR"
+                locale="en-IN"
+                [min]="0.01"
+              />
+            </div>
+
+            <div class="form-field">
+              <label>Line Total</label>
+              <div class="line-total">{{ formatCurrency(getTotalForItem(i)) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Additional Information</h3>
+      <div class="form-field">
+        <label>Notes</label>
+        <textarea
+          pTextarea
+          formControlName="notes"
+          rows="3"
+          class="notes-input"
+          placeholder="Enter any additional instructions for the supplier..."
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="order-summary">
+      <div><span>Total Products</span><strong>{{ totalProducts }}</strong></div>
+      <div class="grand-total"><span>Estimated Order Total</span><strong>{{ formatCurrency(subtotal) }}</strong></div>
+    </div>
+
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [outlined]="true" [disabled]="saving" (onClick)="purchaseOrderDialogVisible = false" />
+    <p-button *ngIf="!isEditMode" label="Save as Draft" icon="pi pi-save" severity="secondary" [outlined]="true" [loading]="saving" [disabled]="saving" (onClick)="saveAsDraft()" />
+    <p-button *ngIf="isEditMode" label="Update Draft" icon="pi pi-save" [loading]="saving" [disabled]="saving" (onClick)="saveAsDraft()" />
+    <p-button *ngIf="!isEditMode || isEditMode" label="Place Purchase Order" icon="pi pi-send" [loading]="saving" [disabled]="saving" (onClick)="placePurchaseOrder()" />
+  </ng-template>
+</p-dialog>
+
+<!-- PURCHASE ORDER DETAILS DIALOG -->
+
+<p-dialog
+  [(visible)]="detailsDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  header="Purchase Order Details"
+  [style]="{ width: '750px', maxWidth: '95vw' }"
+>
+  <div *ngIf="selectedPurchaseOrder as order" class="details-content">
+    <div class="details-header">
+      <div>
+        <span class="details-label">Purchase Order Number</span>
+        <h2>{{ order.purchaseOrderNumber }}</h2>
+      </div>
+      <p-tag [value]="order.status" [severity]="getStatusSeverity(order.status)" />
+    </div>
+
+    <div class="details-grid">
+      <div><span>Supplier</span><strong>{{ getSupplierName(order) }}</strong></div>
+      <div><span>Order Date</span><strong>{{ order.orderDate | date: 'dd MMM yyyy' }}</strong></div>
+      <div><span>Expected Delivery</span><strong>{{ order.expectedDeliveryDate ? (order.expectedDeliveryDate | date: 'dd MMM yyyy') : '—' }}</strong></div>
+      <div><span>Total Products</span><strong>{{ order.items.length }}</strong></div>
+    </div>
+
+    <h3 class="details-section-title">Ordered Products</h3>
+    <div class="details-table-wrapper">
+      <table class="details-table">
+        <thead><tr><th>Product</th><th>Quantity</th><th>Estimated Price</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let item of order.items">
+            <td>{{ getProductName(item) }}</td>
+            <td>{{ item.orderedQuantity }}</td>
+            <td>{{ formatCurrency(item.estimatedPurchasePrice) }}</td>
+            <td>{{ formatCurrency(item.total) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="details-total">
+      <span>Estimated Order Total</span>
+      <strong>{{ formatCurrency(order.subtotal) }}</strong>
+    </div>
+
+    <div class="notes-display" *ngIf="order.notes">
+      <span>Notes</span>
+      <p>{{ order.notes }}</p>
+    </div>
+
+    <div class="received-info" *ngIf="order.status === 'Partially Received' || order.status === 'Received'">
+      <h3>Delivery Progress</h3>
+      <div *ngFor="let item of order.items" class="received-item">
+        <span>{{ getProductName(item) }}</span>
+        <strong>{{ item.receivedQuantity }} / {{ item.orderedQuantity }} received</strong>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="detailsDialogVisible = false" />
+  </ng-template>
+</p-dialog>

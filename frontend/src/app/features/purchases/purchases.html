@@ -1,0 +1,271 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h2>Purchase Management</h2>
+            <p>Manage supplier purchases and track incoming stock.</p>
+        </div>
+        <p-button label="Create Purchase" icon="pi pi-plus" (onClick)="openCreateDialog()" />
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-icon blue"><i class="pi pi-shopping-cart"></i></div>
+            <div><span>Total Purchases</span>
+                <h3>{{ purchases.length }}</h3>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon green"><i class="pi pi-check-circle"></i></div>
+            <div><span>Completed Purchases</span>
+                <h3>{{ completedCount }}</h3>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon red"><i class="pi pi-times-circle"></i></div>
+            <div><span>Cancelled Purchases</span>
+                <h3>{{ cancelledCount }}</h3>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon purple"><i class="pi pi-wallet"></i></div>
+            <div><span>Purchase Value</span>
+                <h3>{{ formatCurrency(totalPurchaseValue) }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <div class="table-toolbar">
+            <div>
+                <h3>Purchase History</h3>
+                <p>View and manage all supplier purchases.</p>
+            </div>
+            <div class="filter-controls">
+                <input pInputText type="text" placeholder="Search purchase..." [(ngModel)]="searchText" />
+                <p-select [(ngModel)]="statusFilter"
+                    [options]="[{label:'All Statuses', value:null}, {label:'Completed', value:'Completed'}, {label:'Cancelled', value:'Cancelled'}]"
+                    optionLabel="label" optionValue="value" placeholder="All Statuses" />
+            </div>
+        </div>
+
+        <p-table [value]="filteredPurchases" [loading]="loading" [paginator]="true" [rows]="10"
+            [rowsPerPageOptions]="[5,10,25]" responsiveLayout="scroll" styleClass="p-datatable-striped">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Purchase ID</th>
+                    <th>Supplier</th>
+                    <th>Supplier Invoice</th>
+                    <th>Purchase Date</th>
+                    <th>Grand Total</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-purchase>
+                <tr>
+                    <td><strong>{{ purchase.purchaseId }}</strong></td>
+                    <td>
+                        <div class="supplier-cell">
+                            <strong>{{ purchase.supplier?.supplierName || 'N/A' }}</strong>
+                            <small>{{ purchase.supplier?.companyName || '' }}</small>
+                        </div>
+                    </td>
+                    <td>{{ purchase.supplierInvoiceNumber }}</td>
+                    <td>{{ purchase.purchaseDate | date:'dd MMM yyyy' }}</td>
+                    <td><strong>{{ formatCurrency(purchase.grandTotal) }}</strong></td>
+                    <td><p-tag [value]="getPaymentStatus(purchase)"
+                            [severity]="getStatusSeverity(getPaymentStatus(purchase))" /></td>
+                    <td><p-tag [value]="purchase.status" [severity]="getStatusSeverity(purchase.status)" /></td>
+                    <td>
+                        <div class="action-buttons">
+                            <p-button icon="pi pi-eye" severity="info" [text]="true" [rounded]="true"
+                                pTooltip="View Purchase" (onClick)="viewPurchase(purchase)" />
+                            <p-button *ngIf="purchase.status === 'Completed'" icon="pi pi-times" severity="danger"
+                                [text]="true" [rounded]="true" pTooltip="Cancel Purchase"
+                                (onClick)="openCancelDialog(purchase)" />
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="8" class="empty-message">No purchases found.</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</div>
+
+<p-dialog header="Create New Purchase" [(visible)]="purchaseDialogVisible" [modal]="true"
+    [style]="{width: '1100px', maxWidth: '96vw'}" styleClass="purchase-dialog" [draggable]="false" [resizable]="false"
+    [breakpoints]="{ '768px': '96vw' }">
+    <form [formGroup]="purchaseForm" (ngSubmit)="submitPurchase()">
+        <div class="form-grid purchase-info-grid">
+            <div class="form-field">
+                <label>Supplier *</label>
+                <p-select formControlName="supplier" [options]="suppliers" optionLabel="supplierName" optionValue="_id"
+                    placeholder="Select Supplier" [filter]="true" filterBy="supplierName" [showClear]="true" class="w-full" />
+            </div>
+            <div class="form-field">
+                <label>Supplier Invoice Number *</label>
+                <input pInputText formControlName="supplierInvoiceNumber" placeholder="Enter supplier invoice number" />
+            </div>
+            <div class="form-field">
+                <label>Purchase Date *</label>
+                <p-datepicker formControlName="purchaseDate" dateFormat="dd/mm/yy" [showIcon]="true" class="w-full" />
+            </div>
+            <div class="form-field">
+                <label>Due Date</label>
+                <p-datepicker formControlName="dueDate" dateFormat="dd/mm/yy" [showIcon]="true" [showClear]="true" class="w-full" />
+            </div>
+        </div>
+
+        <div class="items-heading">
+            <h3>Purchase Items</h3>
+            <p-button class="add-product-button" label="Add Product" icon="pi pi-plus"
+                severity="primary" size="small" type="button" (onClick)="addItem()" />
+        </div>
+
+        <div formArrayName="items" class="purchase-items">
+            <div class="purchase-item-row" *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+                <div class="form-field product-field">
+                    <label>Product *</label>
+                    <p-select formControlName="product" [options]="products" optionLabel="name" optionValue="_id"
+                        placeholder="Select Product" [filter]="true" filterBy="name,sku" class="w-full"
+                        (onChange)="onProductChange(i)">
+                        <ng-template pTemplate="item" let-product>
+                            <div class="product-option">
+                                <strong>{{ product.name }}</strong>
+                                <small>{{ product.sku }}</small>
+                            </div>
+                        </ng-template>
+                    </p-select>
+                </div>
+
+                <div class="form-field quantity-field">
+                    <label>Quantity *</label>
+                    <p-inputNumber formControlName="quantity" [min]="1" class="w-full" />
+                </div>
+
+                <div class="form-field price-field">
+                    <label>Purchase Price *</label>
+                    <p-inputNumber formControlName="purchasePrice" mode="currency" currency="INR" locale="en-IN"
+                        [min]="0" class="w-full" />
+                </div>
+
+                <div class="form-field item-total-field">
+                    <label>Total</label>
+                    <div class="item-total-value">
+                        <strong>{{ formatCurrency(getItemTotal(i)) }}</strong>
+                    </div>
+                </div>
+
+                <div class="remove-item">
+                    <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" type="button"
+                        [disabled]="items.length === 1" (onClick)="removeItem(i)" pTooltip="Remove item" />
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-section-grid">
+            <div class="payment-details">
+                <div class="form-grid totals-grid">
+                    <div class="form-field">
+                        <label>Discount</label>
+                        <p-inputNumber formControlName="discount" mode="currency" currency="INR" locale="en-IN" [min]="0" class="w-full" />
+                    </div>
+                    <div class="form-field">
+                        <label>Amount Paid</label>
+                        <p-inputNumber formControlName="amountPaid" mode="currency" currency="INR" locale="en-IN" [min]="0" class="w-full" />
+                    </div>
+                </div>
+
+                <div class="form-field notes-field">
+                    <label>Notes</label>
+                    <textarea pInputText formControlName="notes" rows="3" placeholder="Optional purchase notes"></textarea>
+                </div>
+            </div>
+
+            <div class="purchase-summary">
+                <div><span>Subtotal</span><strong>{{ formatCurrency(subtotal) }}</strong></div>
+                <div><span>Discount</span><strong>{{ formatCurrency(discount) }}</strong></div>
+                <div class="grand-total"><span>Grand Total</span><strong>{{ formatCurrency(grandTotal) }}</strong></div>
+                <div><span>Amount Paid</span><strong>{{ formatCurrency(amountPaid) }}</strong></div>
+                <div class="balance-due"><span>Balance Due</span><strong>{{ formatCurrency(balanceDue) }}</strong></div>
+            </div>
+        </div>
+
+        <div class="dialog-actions">
+            <p-button label="Close" severity="secondary" [outlined]="true" type="button"
+                (onClick)="purchaseDialogVisible = false" />
+            <p-button label="Save Purchase" icon="pi pi-check" type="submit" [loading]="saving" [disabled]="saving" />
+        </div>
+    </form>
+</p-dialog>
+
+<p-dialog header="Purchase Details" [(visible)]="detailsDialogVisible" [modal]="true"
+    [style]="{width:'750px', maxWidth:'95vw'}" [draggable]="false" [resizable]="false">
+    <div *ngIf="selectedPurchase as purchase" class="purchase-details">
+        <div class="details-grid">
+            <div><span>Purchase ID</span><strong>{{ purchase.purchaseId }}</strong></div>
+            <div><span>Supplier</span><strong>{{ purchase.supplier?.supplierName || 'N/A' }}</strong></div>
+            <div><span>Supplier Invoice</span><strong>{{ purchase.supplierInvoiceNumber }}</strong></div>
+            <div><span>Purchase Date</span><strong>{{ purchase.purchaseDate | date:'dd MMM yyyy' }}</strong></div>
+            <div><span>Payment Status</span><p-tag [value]="purchase.paymentStatus"
+                    [severity]="getStatusSeverity(purchase.paymentStatus)" /></div>
+            <div><span>Purchase Status</span><p-tag [value]="purchase.status"
+                    [severity]="getStatusSeverity(purchase.status)" /></div>
+        </div>
+
+        <h3>Products</h3>
+        <div class="details-items">
+            <div class="details-item" *ngFor="let item of purchase.items">
+                <div>
+                    <strong>{{ getProductName(item.product) }}</strong>
+                    <small>Quantity: {{ item.quantity }}</small>
+                </div>
+                <div class="details-item-price">
+                    <span>{{ formatCurrency(item.purchasePrice) }} each</span>
+                    <strong>{{ formatCurrency(item.total) }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-total">
+            <div><span>Subtotal</span><strong>{{ formatCurrency(purchase.subtotal) }}</strong></div>
+            <div><span>Discount</span><strong>{{ formatCurrency(purchase.discount) }}</strong></div>
+            <div><span>Grand Total</span><strong>{{ formatCurrency(purchase.grandTotal) }}</strong></div>
+            <div><span>Amount Paid</span><strong>{{ formatCurrency(purchase.amountPaid) }}</strong></div>
+            <div><span>Balance Due</span><strong>{{ formatCurrency(purchase.balanceDue) }}</strong></div>
+        </div>
+        <div *ngIf="purchase.status === 'Cancelled'" class="cancellation-info">
+            <strong>Cancellation Reason</strong>
+            <p>{{ purchase.cancellationReason }}</p>
+        </div>
+        <div *ngIf="purchase.notes" class="notes-display">
+            <strong>Notes</strong>
+            <p>{{ purchase.notes }}</p>
+        </div>
+    </div>
+</p-dialog>
+
+<p-dialog header="Cancel Purchase" [(visible)]="cancelDialogVisible" [modal]="true"
+    [style]="{width:'450px', maxWidth:'95vw'}" [draggable]="false" [resizable]="false">
+    <div class="cancel-content">
+        <p>Are you sure you want to cancel <strong>{{ selectedPurchase?.purchaseId }}</strong>?</p>
+        <p class="warning-text">The purchased quantities will be removed from inventory. This action cannot be undone.</p>
+        <div class="form-field">
+            <label>Cancellation Reason *</label>
+            <textarea pInputText rows="4" [(ngModel)]="cancellationReason" placeholder="Enter the reason for cancellation"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="cancelDialogVisible = false" />
+        <p-button label="Confirm Cancellation" icon="pi pi-times" severity="danger" [loading]="saving"
+            [disabled]="saving || !cancellationReason.trim()" (onClick)="cancelPurchase()" />
+    </ng-template>
+</p-dialog>
