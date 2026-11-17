@@ -7,6 +7,7 @@ const supplierRoutes = require('./routes/supplierRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const purchaseRoutes = require('./routes/purchaseRoutes');
 const purchaseOrderRoutes = require('./routes/purchaseOrderRoutes');
+const goodsReceiptRoutes = require('./routes/goodsReceiptRoutes');
 
 // Middleware
 app.use(cors({
@@ -29,5 +30,6 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/purchase-orders', purchaseOrderRoutes);
+app.use('/api/goods-receipts', goodsReceiptRoutes);
 
 module.exports = app;
