@@ -85,7 +85,7 @@
       [paginator]="true"
       [rows]="10"
       [rowsPerPageOptions]="[10, 25, 50]"
-      [tableStyle]="{ 'min-width': '950px' }"
+      [tableStyle]="{ 'min-width': '1200px' }"
       responsiveLayout="scroll"
       dataKey="_id"
       emptyMessage="No purchase orders found."
@@ -98,6 +98,9 @@
           <th>Order Date</th>
           <th>Expected Delivery</th>
           <th>Items</th>
+          <th>Ordered Qty</th>
+          <th>Received Qty</th>
+          <th>Pending Qty</th>
           <th>Subtotal</th>
           <th>Status</th>
           <th class="actions-column">Actions</th>
@@ -111,6 +114,9 @@
           <td>{{ order.orderDate | date: 'dd MMM yyyy' }}</td>
           <td>{{ order.expectedDeliveryDate ? (order.expectedDeliveryDate | date: 'dd MMM yyyy') : '—' }}</td>
           <td>{{ order.items.length }}</td>
+          <td><strong>{{ getTotalOrderedQuantity(order) }}</strong></td>
+          <td><strong class="received-quantity">{{ getTotalReceivedQuantity(order) }}</strong></td>
+          <td><strong class="pending-quantity">{{ getTotalPendingQuantity(order) }}</strong></td>
           <td><strong>{{ formatCurrency(order.subtotal) }}</strong></td>
           <td><p-tag [value]="order.status" [severity]="getStatusSeverity(order.status)" /></td>
           <td>
@@ -126,7 +132,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="empty-message">No purchase orders found.</td>
+          <td colspan="11" class="empty-message">No purchase orders found.</td>
         </tr>
       </ng-template>
 
@@ -314,11 +320,22 @@
     <h3 class="details-section-title">Ordered Products</h3>
     <div class="details-table-wrapper">
       <table class="details-table">
-        <thead><tr><th>Product</th><th>Quantity</th><th>Estimated Price</th><th>Total</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Ordered</th>
+            <th>Received</th>
+            <th>Pending</th>
+            <th>Estimated Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
         <tbody>
           <tr *ngFor="let item of order.items">
             <td>{{ getProductName(item) }}</td>
             <td>{{ item.orderedQuantity }}</td>
+            <td>{{ item.receivedQuantity || 0 }}</td>
+            <td>{{ Math.max(item.orderedQuantity - (item.receivedQuantity || 0), 0) }}</td>
             <td>{{ formatCurrency(item.estimatedPurchasePrice) }}</td>
             <td>{{ formatCurrency(item.total) }}</td>
           </tr>

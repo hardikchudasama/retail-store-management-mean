@@ -1,0 +1,339 @@
+<p-toast></p-toast>
+
+<div class="page-header">
+  <div>
+    <h2>Goods Receipt</h2>
+    <p>Record products physically received from suppliers.</p>
+  </div>
+
+  <p-button
+    label="Create Goods Receipt"
+    icon="pi pi-plus"
+    (onClick)="openCreateDialog()">
+  </p-button>
+</div>
+
+<!-- Goods Receipt List -->
+<div class="card">
+  <p-table
+    [value]="goodsReceipts"
+    [loading]="loading"
+    dataKey="_id"
+    [paginator]="true"
+    [rows]="10"
+    [rowsPerPageOptions]="[5, 10, 25]"
+    responsiveLayout="scroll"
+    [showGridlines]="true">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Receipt Number</th>
+        <th>Purchase Order</th>
+        <th>Supplier</th>
+        <th>Receipt Date</th>
+        <th>Products</th>
+        <th>Subtotal</th>
+        <th>Action</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-receipt>
+      <tr>
+        <td>
+          <strong>{{ receipt.goodsReceiptNumber }}</strong>
+        </td>
+
+        <td>{{ getPurchaseOrderNumber(receipt) }}</td>
+
+        <td>{{ getSupplierName(receipt) }}</td>
+
+        <td>{{ formatDate(receipt.receiptDate) }}</td>
+
+        <td>{{ receipt.items?.length || 0 }}</td>
+
+        <td>{{ formatCurrency(receipt.subtotal) }}</td>
+
+        <td>
+          <p-button
+            icon="pi pi-eye"
+            severity="info"
+            [text]="true"
+            [rounded]="true"
+            pTooltip="View Details"
+            (onClick)="viewGoodsReceipt(receipt)">
+          </p-button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" class="text-center">
+          No Goods Receipts found.
+        </td>
+      </tr>
+    </ng-template>
+
+  </p-table>
+</div>
+
+<!-- Create Goods Receipt Dialog -->
+<p-dialog
+  header="Create Goods Receipt"
+  [(visible)]="createDialogVisible"
+  [modal]="true"
+  [style]="{ width: '850px', maxWidth: '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="closeCreateDialog()">
+
+  <form [formGroup]="form" (ngSubmit)="submitGoodsReceipt()">
+
+    <div class="form-grid">
+
+      <!-- Purchase Order -->
+      <div class="form-field">
+        <label for="purchaseOrder">Purchase Order *</label>
+
+        <p-select
+          inputId="purchaseOrder"
+          formControlName="purchaseOrder"
+          [options]="purchaseOrders"
+          optionLabel="purchaseOrderNumber"
+          optionValue="_id"
+          placeholder="Select Purchase Order"
+          [filter]="true"
+          filterBy="purchaseOrderNumber"
+          [showClear]="true"
+          appendTo="body"
+          (onChange)="onPurchaseOrderChange($event.value)"
+          class="w-full">
+        </p-select>
+
+        <small
+          class="error-text"
+          *ngIf="form.get('purchaseOrder')?.touched &&
+                 form.get('purchaseOrder')?.hasError('required')">
+          Please select a Purchase Order.
+        </small>
+      </div>
+
+      <!-- Receipt Date -->
+      <div class="form-field">
+        <label for="receiptDate">Receipt Date *</label>
+
+        <p-datepicker
+          inputId="receiptDate"
+          formControlName="receiptDate"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          appendTo="body"
+          class="w-full">
+        </p-datepicker>
+      </div>
+
+    </div>
+
+    <!-- Product Receiving Details -->
+    <div class="items-section" *ngIf="form.get('purchaseOrder')?.value">
+
+      <h3>Products to Receive</h3>
+
+      <div formArrayName="items">
+
+        <div
+          class="receipt-item"
+          *ngFor="let item of items.controls; let i = index"
+          [formGroupName]="i">
+
+          <div class="product-info">
+            <strong>{{ item.get('productName')?.value }}</strong>
+            <small *ngIf="item.get('productSku')?.value">
+              SKU: {{ item.get('productSku')?.value }}
+            </small>
+          </div>
+
+          <div class="quantity-info">
+            <span>Ordered</span>
+            <strong>{{ item.get('orderedQuantity')?.value }}</strong>
+          </div>
+
+          <div class="quantity-info">
+            <span>Received</span>
+            <strong>{{ item.get('receivedQuantity')?.value }}</strong>
+          </div>
+
+          <div class="quantity-info pending">
+            <span>Pending</span>
+            <strong>{{ item.get('pendingQuantity')?.value }}</strong>
+          </div>
+
+          <div class="form-field receiving-field">
+            <label>Receiving Now</label>
+
+            <p-inputNumber
+              formControlName="receivingNow"
+              [min]="1"
+              [showButtons]="true"
+              [useGrouping]="false"
+              placeholder="Quantity"
+              class="w-full">
+            </p-inputNumber>
+
+            <small
+              class="error-text"
+              *ngIf="item.get('receivingNow')?.touched &&
+                     item.get('receivingNow')?.invalid">
+              Enter a quantity between 1 and
+              {{ item.get('pendingQuantity')?.value }}.
+            </small>
+          </div>
+
+          <div class="form-field price-field">
+            <label>Actual Purchase Price</label>
+
+            <p-inputNumber
+              formControlName="purchasePrice"
+              mode="currency"
+              currency="INR"
+              locale="en-IN"
+              [min]="0.01"
+              [minFractionDigits]="2"
+              class="w-full">
+            </p-inputNumber>
+          </div>
+
+        </div>
+
+        <div
+          class="empty-items"
+          *ngIf="items.length === 0">
+
+          All products in this Purchase Order have already been received.
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-field notes-field">
+      <label for="notes">Notes</label>
+
+      <textarea
+        id="notes"
+        pTextarea
+        formControlName="notes"
+        rows="3"
+        class="w-full"
+        placeholder="Enter any delivery notes...">
+      </textarea>
+    </div>
+
+    <!-- Dialog Footer -->
+    <div class="dialog-footer">
+
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [outlined]="true"
+        type="button"
+        (onClick)="closeCreateDialog()">
+      </p-button>
+
+      <p-button
+        label="Save Goods Receipt"
+        icon="pi pi-check"
+        type="submit"
+        [loading]="submitting"
+        [disabled]="submitting || items.length === 0">
+      </p-button>
+
+    </div>
+
+  </form>
+</p-dialog>
+
+<!-- View Goods Receipt Dialog -->
+<p-dialog
+  header="Goods Receipt Details"
+  [(visible)]="viewDialogVisible"
+  [modal]="true"
+  [style]="{ width: '750px', maxWidth: '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="closeViewDialog()">
+
+  <div *ngIf="selectedReceipt">
+
+    <div class="details-grid">
+
+      <div>
+        <span>Receipt Number</span>
+        <strong>{{ selectedReceipt.goodsReceiptNumber }}</strong>
+      </div>
+
+      <div>
+        <span>Purchase Order</span>
+        <strong>{{ getPurchaseOrderNumber(selectedReceipt) }}</strong>
+      </div>
+
+      <div>
+        <span>Supplier</span>
+        <strong>{{ getSupplierName(selectedReceipt) }}</strong>
+      </div>
+
+      <div>
+        <span>Receipt Date</span>
+        <strong>{{ formatDate(selectedReceipt.receiptDate) }}</strong>
+      </div>
+
+    </div>
+
+    <h3>Received Products</h3>
+
+    <p-table
+      [value]="selectedReceipt.items"
+      responsiveLayout="scroll"
+      [showGridlines]="true">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Product</th>
+          <th>Received Quantity</th>
+          <th>Purchase Price</th>
+          <th>Total</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-item>
+        <tr>
+          <td>{{ getProductName(item) }}</td>
+          <td>{{ item.receivedQuantity }}</td>
+          <td>{{ formatCurrency(item.purchasePrice) }}</td>
+          <td>{{ formatCurrency(item.total) }}</td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+
+    <div class="receipt-total">
+      <span>Subtotal</span>
+      <strong>{{ formatCurrency(selectedReceipt.subtotal) }}</strong>
+    </div>
+
+    <div class="notes-display" *ngIf="selectedReceipt.notes">
+      <strong>Notes</strong>
+      <p>{{ selectedReceipt.notes }}</p>
+    </div>
+
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Close"
+      severity="secondary"
+      (onClick)="closeViewDialog()">
+    </p-button>
+  </ng-template>
+
+</p-dialog>

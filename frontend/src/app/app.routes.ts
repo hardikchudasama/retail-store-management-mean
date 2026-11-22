@@ -5,6 +5,7 @@ import { Suppliers } from './features/suppliers/suppliers';
 import { Customers } from './features/customers/customers';
 import { Purchases } from './features/purchases/purchases';
 import { PurchaseOrders } from './features/purchase-orders/purchase-orders';
+import { GoodsReceipts } from './features/goods-receipts/goods-receipts';
 
 export const routes: Routes = [
   {
@@ -43,6 +44,10 @@ export const routes: Routes = [
       {
         path: 'purchase-orders',
         component: PurchaseOrders,
+      },
+      {
+        path: 'goods-receipts',
+        component: GoodsReceipts
       },
     ]
   },

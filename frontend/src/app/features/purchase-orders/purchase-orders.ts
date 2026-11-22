@@ -62,6 +62,8 @@ import { PurchaseOrderService } from '../../services/purchase-order.service';
   providers: [MessageService, ConfirmationService],
 })
 export class PurchaseOrders implements OnInit {
+  readonly Math = Math;
+
   private readonly fb = inject(FormBuilder);
   private readonly purchaseOrderService = inject(PurchaseOrderService);
   private readonly messageService = inject(MessageService);
@@ -495,6 +497,29 @@ export class PurchaseOrders implements OnInit {
     }
 
     return item.product?.name || 'Unknown Product';
+  }
+
+  getTotalOrderedQuantity(order: PurchaseOrder): number {
+    return order.items.reduce(
+      (total, item) => total + (Number(item.orderedQuantity) || 0),
+      0
+    );
+  }
+
+  getTotalReceivedQuantity(order: PurchaseOrder): number {
+    return order.items.reduce(
+      (total, item) => total + (Number(item.receivedQuantity) || 0),
+      0
+    );
+  }
+
+  getTotalPendingQuantity(order: PurchaseOrder): number {
+    return order.items.reduce((total, item) => {
+      const ordered = Number(item.orderedQuantity) || 0;
+      const received = Number(item.receivedQuantity) || 0;
+
+      return total + Math.max(ordered - received, 0);
+    }, 0);
   }
 
   // --------------------------------------------------
