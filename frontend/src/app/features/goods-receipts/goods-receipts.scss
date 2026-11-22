@@ -3,35 +3,98 @@
   width: 100%;
 }
 
-.page-header {
+.goods-receipts-page {
+  width: 100%;
+}
+
+.page-heading {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 
   h2 {
     margin: 0 0 6px;
-    font-size: 24px;
-    font-weight: 600;
+    color: #172554;
+    font-size: 22px;
   }
 
   p {
     margin: 0;
-    color: var(--p-text-muted-color);
-    font-size: 14px;
+    color: #64748b;
+    font-size: 13px;
   }
 }
 
-.card {
-  background: var(--p-content-background);
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 10px;
-  padding: 18px;
+.page-heading p-button {
+  flex: 0 0 auto;
+}
+
+:host ::ng-deep .page-heading p-button .p-button {
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  padding: 11px 16px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+
+  &:hover {
+    background: #1d4ed8;
+  }
+}
+
+.goods-receipts-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
 }
 
 .text-center {
   text-align: center;
+}
+
+:host ::ng-deep .goods-receipts-table {
+  font-family: Arial, sans-serif;
+
+  .p-datatable-table {
+    min-width: 850px;
+  }
+
+  .p-datatable-thead > tr > th {
+    padding: 14px 12px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .p-datatable-tbody > tr > td {
+    padding: 15px 12px;
+    color: #475569;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .p-paginator {
+    padding: 10px 0 0;
+    border: none;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+  }
+
+  .p-paginator-page,
+  .p-paginator-first,
+  .p-paginator-prev,
+  .p-paginator-next,
+  .p-paginator-last {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+  }
 }
 
 .form-grid {
@@ -120,6 +183,12 @@
   border-radius: 8px;
 }
 
+.empty-message {
+  padding: 24px !important;
+  color: #64748b;
+  text-align: center;
+}
+
 .notes-field {
   margin-bottom: 20px;
 }
@@ -190,9 +259,13 @@
 }
 
 @media (max-width: 768px) {
-  .page-header {
+  .page-heading {
     align-items: flex-start;
     flex-direction: column;
+
+    p-button {
+      width: 100%;
+    }
   }
 
   .form-grid,
@@ -204,8 +277,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .card {
-    padding: 10px;
+  .goods-receipts-card {
+    padding: 14px;
   }
 }
 

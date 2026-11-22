@@ -1,6 +1,7 @@
+<section class="goods-receipts-page">
 <p-toast></p-toast>
 
-<div class="page-header">
+<div class="page-heading">
   <div>
     <h2>Goods Receipt</h2>
     <p>Record products physically received from suppliers.</p>
@@ -14,7 +15,7 @@
 </div>
 
 <!-- Goods Receipt List -->
-<div class="card">
+<div class="goods-receipts-card">
   <p-table
     [value]="goodsReceipts"
     [loading]="loading"
@@ -23,7 +24,7 @@
     [rows]="10"
     [rowsPerPageOptions]="[5, 10, 25]"
     responsiveLayout="scroll"
-    [showGridlines]="true">
+    styleClass="goods-receipts-table">
 
     <ng-template pTemplate="header">
       <tr>
@@ -76,6 +77,7 @@
 
   </p-table>
 </div>
+</section>
 
 <!-- Create Goods Receipt Dialog -->
 <p-dialog
@@ -293,8 +295,7 @@
 
     <p-table
       [value]="selectedReceipt.items"
-      responsiveLayout="scroll"
-      [showGridlines]="true">
+      responsiveLayout="scroll">
 
       <ng-template pTemplate="header">
         <tr>

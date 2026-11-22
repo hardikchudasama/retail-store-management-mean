@@ -487,6 +487,32 @@
     vertical-align: middle;
   }
 
+  .purchase-orders-table {
+    font-family: Arial, sans-serif;
+
+    .p-paginator {
+      padding: 10px 0 0;
+      border: none;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+
+      .p-select.p-paginator-rpp-dropdown {
+        width: auto;
+        flex: 0 1 auto;
+        font-size: 12px;
+      }
+    }
+
+    .p-paginator-page,
+    .p-paginator-first,
+    .p-paginator-prev,
+    .p-paginator-next,
+    .p-paginator-last {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+    }
+  }
+
   .p-tag {
     font-size: 11px;
   }
